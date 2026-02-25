@@ -244,32 +244,10 @@ services:
     networks:
       - txnews
 
-  # ─── n8n Workflow Automation ─────────────────────────────────────────────────
-  n8n:
-    image: n8nio/n8n:latest
-    container_name: txnews-n8n
-    ports:
-      - "5678:5678"
-    environment:
-      - N8N_HOST=${N8N_HOST:-localhost}
-      - N8N_PORT=5678
-      - N8N_PROTOCOL=http
-      - N8N_BASIC_AUTH_ACTIVE=true
-      - N8N_BASIC_AUTH_USER=${N8N_USER:-admin}
-      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD}
-      - WEBHOOK_URL=http://${EC2_PUBLIC_IP}:5678/
-      - GENERIC_TIMEZONE=America/Chicago
-      - TZ=America/Chicago
-      - N8N_LOG_LEVEL=info
-      - N8N_METRICS=false
-      - EXECUTIONS_DATA_PRUNE=true
-      - EXECUTIONS_DATA_MAX_AGE=168
-    volumes:
-      - n8n_data:/home/node/.n8n
-      - ./n8n-workflows:/home/node/host-workflows:ro
-    restart: unless-stopped
-    networks:
-      - txnews
+  # ─── n8n: managed externally (existing instance on :5678) ──────────────────
+  # To let n8n reach WP containers, connect it to this network once:
+  #   docker network connect txnews_txnews <your-n8n-container-name>
+  # Then use container names as hostnames, e.g. http://txnews-wp-celina/
 
   # ─── Playwright Scraper (city agenda scraping) ───────────────────────────────
   scraper:
@@ -299,7 +277,6 @@ volumes:
   wp_melissa:
   db_fulshear:
   wp_fulshear:
-  n8n_data:
   certbot_certs:
   certbot_www:
 
