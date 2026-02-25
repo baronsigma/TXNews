@@ -80,10 +80,13 @@ wait_for_wp() {
   local i=0
   # Use a PHP-based check (wp eval) so we go through WordPress/MySQLi instead
   # of the MariaDB CLI, which rejects MySQL 8.0 self-signed TLS certificates.
-  until wp "$container" eval 'echo "db_ok";' --skip-plugins --skip-themes 2>/dev/null | grep -q "db_ok"; do
+  local last_err=""
+  until last_err=$(wp "$container" eval 'echo "db_ok";' --skip-plugins --skip-themes 2>&1) \
+      && echo "$last_err" | grep -q "db_ok"; do
     i=$((i + 1))
     if [ "$i" -ge "$max" ]; then
       echo "  ERROR: $container DB not ready after ${max} attempts. Aborting."
+      echo "  Last wp-cli output: $last_err"
       exit 1
     fi
     sleep 3
