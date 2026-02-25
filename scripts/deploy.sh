@@ -39,7 +39,8 @@ if ! command -v docker &>/dev/null; then
   systemctl enable --now docker
   echo "  Docker installed."
 else
-  echo "  Docker already installed."
+  echo "  Docker already installed — ensuring compose plugin is present…"
+  apt-get install -y docker-compose-plugin 2>/dev/null || true
 fi
 
 # ── 3. Ollama ─────────────────────────────────────────────────────────────────
