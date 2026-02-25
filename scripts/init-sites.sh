@@ -52,6 +52,10 @@ wp() {
   db_name=$(docker exec "$container" sh -c 'echo "$WORDPRESS_DB_NAME"')
   db_user=$(docker exec "$container" sh -c 'echo "$WORDPRESS_DB_USER"')
   db_pass=$(docker exec "$container" sh -c 'echo "$WORDPRESS_DB_PASSWORD"')
+  # MySQL 8.0 uses self-signed certs; disable SSL verification in the MariaDB client
+  local mycnf
+  mycnf=$(mktemp)
+  printf '[client]\nssl=0\n' > "$mycnf"
   docker run --rm \
     --network txnews_txnews \
     --volumes-from "$container" \
@@ -59,8 +63,12 @@ wp() {
     -e WORDPRESS_DB_NAME="$db_name" \
     -e WORDPRESS_DB_USER="$db_user" \
     -e WORDPRESS_DB_PASSWORD="$db_pass" \
+    -v "$mycnf:/root/.my.cnf:ro" \
     wordpress:cli \
     wp --allow-root "$@"
+  local rc=$?
+  rm -f "$mycnf"
+  return $rc
 }
 
 # ─── Wait for WordPress to be ready ──────────────────────────────────────────
