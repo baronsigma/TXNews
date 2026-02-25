@@ -1,0 +1,11 @@
+.env
+ssl/
+*.pem
+*.key
+*.crt
+*.log
+__pycache__/
+*.pyc
+.DS_Store
+node_modules/
+wp-content/uploads/

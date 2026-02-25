@@ -1,0 +1,364 @@
+{
+  "name": "Agenda Digest \u2014 Melissa",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 12 * * 1,3,5"
+            }
+          ]
+        }
+      },
+      "id": "990a9706-ffe8-4e00-891a-ab200dc6438f",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "dd53b882-a798-4a45-a952-f2d8c5f8e834",
+              "name": "cityName",
+              "value": "Melissa",
+              "type": "string"
+            },
+            {
+              "id": "db1c1e67-7acd-41e5-82e1-de8e5cee74a5",
+              "name": "publication",
+              "value": "Melissa TX News",
+              "type": "string"
+            },
+            {
+              "id": "4a300a21-c804-4ee5-b070-94256e101b9c",
+              "name": "siteUrl",
+              "value": "https://melissatxnews.com",
+              "type": "string"
+            },
+            {
+              "id": "58ca3c54-4cc4-4bd2-a7a4-579440031d32",
+              "name": "wpUser",
+              "value": "admin",
+              "type": "string"
+            },
+            {
+              "id": "d036451b-78fa-4531-a887-be791e537992",
+              "name": "wpAppPass",
+              "value": "REPLACE_WITH_APP_PASS_MELISSA",
+              "type": "string"
+            },
+            {
+              "id": "49a248c6-4752-4ae5-944a-50daa98d7fa4",
+              "name": "categoryId",
+              "value": 3,
+              "type": "number"
+            },
+            {
+              "id": "76823483-b4b0-4052-be8f-499d235ccaf7",
+              "name": "scraperCity",
+              "value": "melissa",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "76244f8f-fd9b-431d-b4bc-1669a696862e",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "\n// Call the local Playwright scraper (txnews-scraper:5001)\nconst cfg = $('Config').first().json;\n\nlet result;\ntry {\n  const resp = await fetch('http://txnews-scraper:5001/scrape', {\n    method: 'POST',\n    headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify({ city: cfg.scraperCity }),\n  });\n  result = await resp.json();\n} catch (e) {\n  return [{json: {hasData: false, error: e.message, cityName: cfg.cityName}}];\n}\n\nif (!result.success || !result.agenda_text) {\n  return [{json: {\n    hasData:  false,\n    error:    result.error || 'No agenda text returned',\n    cityName: cfg.cityName,\n  }}];\n}\n\nreturn [{json: {\n  hasData:      true,\n  meetingTitle: result.meeting_title,\n  meetingDate:  result.meeting_date,\n  meetingType:  result.meeting_type,\n  agendaText:   result.agenda_text,\n  cityName:     cfg.cityName,\n  siteUrl:      cfg.siteUrl,\n  wpUser:       cfg.wpUser,\n  wpAppPass:    cfg.wpAppPass,\n  categoryId:   cfg.categoryId,\n}}];\n"
+      },
+      "id": "7e3da9a5-fe55-4c9e-b777-87d4592f5bb0",
+      "name": "Fetch Agenda",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "9e184a1c-3773-4049-8763-d36acbb15f5c",
+              "leftValue": "={{ $json.hasData }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "5ffa4e36-087a-4e33-b1aa-f04c22e1b8a6",
+      "name": "Has Agenda?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        720,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "\nconst data = items[0].json;\nconst { meetingTitle, meetingDate, meetingType, agendaText, cityName } = data;\n\nconst prompt = `You are a civic journalist writing for Melissa TX News, a community newspaper covering Melissa, Texas.\n\nWrite a news article previewing an upcoming ${meetingType || 'city council'} meeting based on the agenda text below.\n\nABSOLUTE RULES:\n- Prose paragraphs ONLY. No bullets, dashes, numbered lists, or asterisks.\n- Summarize key agenda items in plain English for a general audience.\n- Include the meeting date, body name, and key action items in complete sentences.\n- Do not reproduce the agenda verbatim \u2014 synthesize and explain what each item means for residents.\n- 200\u2013350 words. Factual local newspaper tone.\n- Output: article title on line 1 (no prefix), blank line, then article body.\n\nEXAMPLE OUTPUT:\nMelissa City Council to Consider Rezoning Request and Road Bond at March 3 Meeting\n\nThe Melissa City Council will convene Monday, March 3, for its regular monthly meeting, where members are expected to take up a rezoning request from a residential developer along the city's northern growth corridor and consider authorizing a bond package for road improvements near the new elementary school campus.\n\nThe rezoning item seeks to reclassify approximately 47 acres from agricultural to planned development to accommodate a 180-unit townhome community. The project has previously received a favorable recommendation from the Planning and Zoning Commission, clearing the way for a council vote.\n\nAlso on the agenda is a resolution to call a May bond election, which would ask voters to approve up to $18 million in general obligation bonds to fund the extension of a county road and intersection upgrades at two high-priority safety locations.\n\nThe council is also set to hear a presentation from the city manager on infrastructure needs associated with ongoing residential expansion and to approve routine consent items. The meeting begins at 6:30 p.m. at Melissa City Hall.\n\nMEETING INFORMATION:\nTitle: ${meetingTitle}\nDate: ${meetingDate}\nType: ${meetingType}\n\nAGENDA TEXT (from official PDF):\n${agendaText.slice(0, 6000)}\n\nNow write the article:`;\n\nconst rawBody = JSON.stringify({\n  model: 'qwen2.5:3b',\n  prompt,\n  temperature: 0.3,\n  num_predict: 1500,\n  stream: false,\n});\n\nreturn [{json: {\n  rawBody,\n  cityName:   data.cityName,\n  siteUrl:    data.siteUrl,\n  wpUser:     data.wpUser,\n  wpAppPass:  data.wpAppPass,\n  categoryId: data.categoryId,\n}}];\n"
+      },
+      "id": "ac76414b-4ed0-4e25-b028-565f17ff8db0",
+      "name": "Build Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://172.17.0.1:11434/api/generate",
+        "method": "POST",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.rawBody }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "44a4f56b-4c9d-45aa-b3b0-482895d07075",
+      "name": "Call Ollama",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1200,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "\n// Extract title and body from Ollama JSON response\nconst raw = (items[0].json.response || '').trim();\n\nconst lines = raw.split('\\n');\n\n// First non-blank line = title\nlet titleIdx = 0;\nwhile (titleIdx < lines.length && lines[titleIdx].trim() === '') titleIdx++;\nlet title = lines[titleIdx].trim()\n  .replace(/^(title[:\\-\\s]*)/i, '')\n  .replace(/\\*+/g, '');\n\n// Skip blank separator line\nlet bodyStart = titleIdx + 1;\nwhile (bodyStart < lines.length && lines[bodyStart].trim() === '') bodyStart++;\nlet body = lines.slice(bodyStart).join('\\n').trim();\n\n// Fallback: if title looks like body prose (> 150 chars or empty)\nif (!title || title.length > 150) {\n  const firstSentence = (body || raw).replace(/\\n/g, ' ').split(/(?<=[.!?])\\s+/)[0];\n  title = firstSentence.slice(0, 90).trim();\n  if (!body) body = raw;\n}\n\n// Strip forbidden phrases from body\nconst forbidden = [\n  /valued as not reported/gi, /builder not listed/gi,\n  /not available/gi, /unknown builder/gi,\n];\nforbidden.forEach(re => { body = body.replace(re, ''); });\n\n// Pass config fields forward for WP publish\nconst cfg = $('Config').first().json;\nreturn [{json: {\n  title,\n  body,\n  cityName:   cfg.cityName,\n  siteUrl:    cfg.siteUrl,\n  wpUser:     cfg.wpUser,\n  wpAppPass:  cfg.wpAppPass,\n  categoryId: cfg.categoryId,\n}}];\n"
+      },
+      "id": "3c42ddde-f505-433c-8915-2aa69c9cddba",
+      "name": "Parse Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "\n// Query WP REST for recent posts in same category (3-day window)\nconst data = items[0].json;\nconst { siteUrl, wpUser, wpAppPass, categoryId } = data;\n\nconst cutoff = new Date();\ncutoff.setDate(cutoff.getDate() - 3);\n\nconst url = `${siteUrl}/wp-json/wp/v2/posts?categories=${categoryId}&after=${cutoff.toISOString()}&per_page=5&status=publish`;\nconst auth = 'Basic ' + Buffer.from(`${wpUser}:${wpAppPass}`).toString('base64');\n\nlet isDuplicate = false;\ntry {\n  const resp = await fetch(url, { headers: { 'Authorization': auth } });\n  const posts = await resp.json();\n  isDuplicate = Array.isArray(posts) && posts.length > 0;\n} catch (e) {\n  isDuplicate = false; // fail open\n}\n\nreturn [{json: {...data, isDuplicate}}];\n"
+      },
+      "id": "03171eb7-4326-45c1-a687-b7d34e3c6fb0",
+      "name": "Check Duplicate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "f9614324-1773-42de-8dae-0d1ad1427408",
+              "leftValue": "={{ $json.isDuplicate }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "e201735e-a31f-4915-90af-a71458568683",
+      "name": "Is Duplicate?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1920,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.siteUrl }}/wp-json/wp/v2/posts",
+        "method": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"title\":\"{{ $json.title }}\",\"content\":\"{{ $json.body }}\",\"status\":\"publish\",\"categories\":[{{ $json.categoryId }}]}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "7d252d4d-7a26-47ab-9340-8ac04c752831",
+      "name": "Publish to WordPress",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2160,
+        0
+      ],
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "wp-basic-auth",
+          "name": "WP Basic Auth"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Fetch Agenda",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Agenda": {
+      "main": [
+        [
+          {
+            "node": "Has Agenda?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Agenda?": {
+      "main": [
+        [
+          {
+            "node": "Build Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Build Prompt": {
+      "main": [
+        [
+          {
+            "node": "Call Ollama",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Ollama": {
+      "main": [
+        [
+          {
+            "node": "Parse Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Response": {
+      "main": [
+        [
+          {
+            "node": "Check Duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Duplicate": {
+      "main": [
+        [
+          {
+            "node": "Is Duplicate?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Duplicate?": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Publish to WordPress",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "id": "30043ad6-f04f-401a-b536-1f6216180e5e",
+  "tags": []
+}

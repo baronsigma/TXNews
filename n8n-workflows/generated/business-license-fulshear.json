@@ -1,0 +1,399 @@
+{
+  "name": "Business License Digest \u2014 Fulshear",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 13 1 * *"
+            }
+          ]
+        }
+      },
+      "id": "932e0665-5ebb-4c0e-959f-970287ece1d7",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3b05e658-fb6a-49b5-bb7f-6d27f60bacb4",
+              "name": "cityName",
+              "value": "Fulshear",
+              "type": "string"
+            },
+            {
+              "id": "abc5acc0-1ba2-400a-9a40-287799129ba8",
+              "name": "publication",
+              "value": "The Fulshear Report",
+              "type": "string"
+            },
+            {
+              "id": "0c1786f1-25b4-40ae-ad89-5841a78fc1a7",
+              "name": "siteUrl",
+              "value": "https://thefulshearreport.com",
+              "type": "string"
+            },
+            {
+              "id": "1d47d5d2-c275-48f8-8950-981a7c1e5174",
+              "name": "wpUser",
+              "value": "admin",
+              "type": "string"
+            },
+            {
+              "id": "ee81a137-d9fd-49a2-8412-67fd1c936be1",
+              "name": "wpAppPass",
+              "value": "REPLACE_WITH_APP_PASS_FULSHEAR",
+              "type": "string"
+            },
+            {
+              "id": "8c3b867f-61c7-4f1b-9bcf-bc7909cc89ad",
+              "name": "categoryId",
+              "value": 4,
+              "type": "number"
+            },
+            {
+              "id": "39063f64-96d8-4de7-ae31-5567693c8940",
+              "name": "tdlrFilter",
+              "value": "FULSHEAR",
+              "type": "string"
+            },
+            {
+              "id": "a5286121-a50b-4440-a1b3-292fd38404e4",
+              "name": "dataUrl",
+              "value": "https://data.texas.gov/resource/7358-krk7.json?$where=business_city_state_zip+like+'FULSHEAR%25'&$limit=200&$order=license_expiration_date+DESC",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b6a2586c-70c4-48f2-9e1c-cfdb9a80d01d",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.dataUrl }}",
+        "authentication": "none",
+        "method": "GET",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "dcd06d4f-1349-4f61-8836-ce8ef0179b39",
+      "name": "Fetch Licenses",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "\nconst allLicenses = items[0].json;\nif (!Array.isArray(allLicenses)) {\n  return [{json: {hasData: false}}];\n}\n\nconst cfg = $('Config').first().json;\nconst filter = (cfg.tdlrFilter || '').toUpperCase();\n\nconst active = allLicenses.filter(lic => {\n  const city   = (lic.business_city_state_zip || lic.city || '').toUpperCase();\n  const status = (lic.license_status || lic.status || '').toUpperCase();\n  return city.includes(filter) && (!status || status === 'ACTIVE' || status === 'ISSUED');\n});\n\nif (active.length === 0) {\n  return [{json: {hasData: false, cityName: cfg.cityName}}];\n}\n\nconst byTrade = {};\nactive.forEach(lic => {\n  const trade = (lic.license_type || lic.trade_type || lic.program || 'General').trim();\n  if (!byTrade[trade]) byTrade[trade] = [];\n  byTrade[trade].push(lic);\n});\n\nreturn [{json: {\n  hasData:    true,\n  byTrade,\n  count:      active.length,\n  cityName:   cfg.cityName,\n  siteUrl:    cfg.siteUrl,\n  wpUser:     cfg.wpUser,\n  wpAppPass:  cfg.wpAppPass,\n  categoryId: cfg.categoryId,\n}}];\n"
+      },
+      "id": "5fcd1088-a86e-4c2e-bb55-9b975cca1fbd",
+      "name": "Process Licenses",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "f9864657-a2a0-43b4-b8f3-e27694636fe8",
+              "leftValue": "={{ $json.hasData }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c54f4d95-c33c-4213-a919-2e61b9b10d21",
+      "name": "Has Licenses?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        960,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "\nconst data = items[0].json;\nconst { byTrade, count, cityName } = data;\n\nlet tradeSummary = '';\nfor (const [trade, lics] of Object.entries(byTrade)) {\n  tradeSummary += `${trade}: ${lics.length} active license(s)\\n`;\n}\n\nconst prompt = `You are a civic journalist writing for The Fulshear Report, a community newspaper covering Fulshear, Texas.\n\nWrite a news article summarizing recently active business licenses in Fulshear from the Texas Department of Licensing and Regulation (TDLR).\n\nABSOLUTE RULES:\n- Prose paragraphs ONLY. No bullets, dashes, numbered lists, or asterisks.\n- Group licenses by trade type into flowing paragraphs.\n- Every business name and trade type must appear inside a complete sentence.\n- Do not write \"not listed\" or \"unknown\" \u2014 omit any item without usable information.\n- Factual, local newspaper tone. 200\u2013300 words.\n- Output: article title on line 1 (no prefix), blank line, then article body.\n\nEXAMPLE OUTPUT:\nNew Businesses Register Across Skilled Trades in Fulshear\n\nA new batch of state-issued business licenses recorded this month through the Texas Department of Licensing and Regulation shows continued commercial activity in Fulshear. The registrations span several skilled trade categories, reflecting the growing demand for services in one of the region's fastest-expanding communities.\n\nThe cosmetology sector led the filings with four new active licenses, including salons and individual stylists establishing practices within the city. Electrical contractors accounted for three registrations, with licensed firms now authorized to serve both new residential construction and commercial retrofit projects.\n\nTwo HVAC businesses joined the local registry, as demand for climate-control installation continues to rise alongside the residential building boom in the county.\n\nLICENSE DATA:\n${tradeSummary}\nTotal active licenses: ${count}\nCity: Fulshear\nSource: TDLR \u2014 Texas Open Data Portal\n\nNow write the article:`;\n\nconst rawBody = JSON.stringify({\n  model: 'qwen2.5:3b',\n  prompt,\n  temperature: 0.3,\n  num_predict: 1200,\n  stream: false,\n});\n\nreturn [{json: {\n  rawBody,\n  cityName:   data.cityName,\n  siteUrl:    data.siteUrl,\n  wpUser:     data.wpUser,\n  wpAppPass:  data.wpAppPass,\n  categoryId: data.categoryId,\n}}];\n"
+      },
+      "id": "c58d9c88-365c-4355-844d-ebd2a260b0d8",
+      "name": "Build Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://172.17.0.1:11434/api/generate",
+        "method": "POST",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.rawBody }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "ad99c8cc-5ede-460a-846d-4e3c790b7c41",
+      "name": "Call Ollama",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "\n// Extract title and body from Ollama JSON response\nconst raw = (items[0].json.response || '').trim();\n\nconst lines = raw.split('\\n');\n\n// First non-blank line = title\nlet titleIdx = 0;\nwhile (titleIdx < lines.length && lines[titleIdx].trim() === '') titleIdx++;\nlet title = lines[titleIdx].trim()\n  .replace(/^(title[:\\-\\s]*)/i, '')\n  .replace(/\\*+/g, '');\n\n// Skip blank separator line\nlet bodyStart = titleIdx + 1;\nwhile (bodyStart < lines.length && lines[bodyStart].trim() === '') bodyStart++;\nlet body = lines.slice(bodyStart).join('\\n').trim();\n\n// Fallback: if title looks like body prose (> 150 chars or empty)\nif (!title || title.length > 150) {\n  const firstSentence = (body || raw).replace(/\\n/g, ' ').split(/(?<=[.!?])\\s+/)[0];\n  title = firstSentence.slice(0, 90).trim();\n  if (!body) body = raw;\n}\n\n// Strip forbidden phrases from body\nconst forbidden = [\n  /valued as not reported/gi, /builder not listed/gi,\n  /not available/gi, /unknown builder/gi,\n];\nforbidden.forEach(re => { body = body.replace(re, ''); });\n\n// Pass config fields forward for WP publish\nconst cfg = $('Config').first().json;\nreturn [{json: {\n  title,\n  body,\n  cityName:   cfg.cityName,\n  siteUrl:    cfg.siteUrl,\n  wpUser:     cfg.wpUser,\n  wpAppPass:  cfg.wpAppPass,\n  categoryId: cfg.categoryId,\n}}];\n"
+      },
+      "id": "7c59c6be-00f4-49f2-a314-7bae61eed523",
+      "name": "Parse Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "\n// Query WP REST for recent posts in same category (25-day window)\nconst data = items[0].json;\nconst { siteUrl, wpUser, wpAppPass, categoryId } = data;\n\nconst cutoff = new Date();\ncutoff.setDate(cutoff.getDate() - 25);\n\nconst url = `${siteUrl}/wp-json/wp/v2/posts?categories=${categoryId}&after=${cutoff.toISOString()}&per_page=5&status=publish`;\nconst auth = 'Basic ' + Buffer.from(`${wpUser}:${wpAppPass}`).toString('base64');\n\nlet isDuplicate = false;\ntry {\n  const resp = await fetch(url, { headers: { 'Authorization': auth } });\n  const posts = await resp.json();\n  isDuplicate = Array.isArray(posts) && posts.length > 0;\n} catch (e) {\n  isDuplicate = false; // fail open\n}\n\nreturn [{json: {...data, isDuplicate}}];\n"
+      },
+      "id": "ec7b5363-8c82-4380-8d6d-708be7ea53dc",
+      "name": "Check Duplicate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "f5844568-4d4e-47b1-8246-7810433a71ac",
+              "leftValue": "={{ $json.isDuplicate }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "8a846143-8879-4c03-bd12-5c19f6888208",
+      "name": "Is Duplicate?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2160,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.siteUrl }}/wp-json/wp/v2/posts",
+        "method": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"title\":\"{{ $json.title }}\",\"content\":\"{{ $json.body }}\",\"status\":\"publish\",\"categories\":[{{ $json.categoryId }}]}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "58ff7a1d-a043-4f22-a0f1-619368ca7c38",
+      "name": "Publish to WordPress",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2400,
+        0
+      ],
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "wp-basic-auth",
+          "name": "WP Basic Auth"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Fetch Licenses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Licenses": {
+      "main": [
+        [
+          {
+            "node": "Process Licenses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Licenses": {
+      "main": [
+        [
+          {
+            "node": "Has Licenses?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Licenses?": {
+      "main": [
+        [
+          {
+            "node": "Build Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Build Prompt": {
+      "main": [
+        [
+          {
+            "node": "Call Ollama",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Ollama": {
+      "main": [
+        [
+          {
+            "node": "Parse Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Response": {
+      "main": [
+        [
+          {
+            "node": "Check Duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Duplicate": {
+      "main": [
+        [
+          {
+            "node": "Is Duplicate?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Duplicate?": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Publish to WordPress",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "id": "0ab6d495-956b-40b0-9d31-c345254907ec",
+  "tags": []
+}

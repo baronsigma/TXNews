@@ -1,0 +1,399 @@
+{
+  "name": "Permit Digest \u2014 Melissa",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 13 * * 1,3,5"
+            }
+          ]
+        }
+      },
+      "id": "8ea542d2-dc7c-4d22-932c-d1c684a2e42f",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d0ce59ec-2cdf-4da0-8d08-5fd9f22dfdca",
+              "name": "cityName",
+              "value": "Melissa",
+              "type": "string"
+            },
+            {
+              "id": "b515cd03-294a-441e-ad0f-5fc42fd880f4",
+              "name": "publication",
+              "value": "Melissa TX News",
+              "type": "string"
+            },
+            {
+              "id": "8f81971b-b85e-4753-863b-a030c7f62dba",
+              "name": "siteUrl",
+              "value": "https://melissatxnews.com",
+              "type": "string"
+            },
+            {
+              "id": "6dbca945-ee2a-4395-b51e-87f31581500f",
+              "name": "wpUser",
+              "value": "admin",
+              "type": "string"
+            },
+            {
+              "id": "0298bdfa-2259-4218-8f13-0121479a0d4d",
+              "name": "wpAppPass",
+              "value": "REPLACE_WITH_APP_PASS_MELISSA",
+              "type": "string"
+            },
+            {
+              "id": "24ebacdb-0440-46f3-8834-df706bc5f083",
+              "name": "categoryId",
+              "value": 2,
+              "type": "number"
+            },
+            {
+              "id": "7fd20af5-b96f-40b4-961d-ad4ca9e85f0e",
+              "name": "cadCityFilter",
+              "value": "MELISSA",
+              "type": "string"
+            },
+            {
+              "id": "4e4313f4-c6ce-40e7-a6ef-f423b3c7e0c6",
+              "name": "dataUrl",
+              "value": "https://data.texas.gov/resource/82ee-gbj5.json?$where=situscity+like+'MELISSA%25'&$limit=500&$order=permitissueddate+DESC",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "994f80e9-d1f3-4a3b-9c39-aa1873870e09",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.dataUrl }}",
+        "authentication": "none",
+        "method": "GET",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "f6724fb6-6269-4de4-b5d0-7368b67244c3",
+      "name": "Fetch Permits",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "\n// Filter Collin CAD permits for our city, within 60-day window\nconst allPermits = items[0].json;\nif (!Array.isArray(allPermits)) {\n  return [{json: {hasData: false}}];\n}\n\nconst cfg = $('Config').first().json;\nconst cadFilter = (cfg.cadCityFilter || '').toUpperCase();\n\nconst cutoff = new Date();\ncutoff.setDate(cutoff.getDate() - 60);\nconst cutoffStr = cutoff.toISOString().split('T')[0];\n\nconst filtered = allPermits.filter(p => {\n  const city  = (p.situscity || '').toUpperCase().trim();\n  const issued = (p.permitissueddate || '').substring(0, 10);\n  return city.includes(cadFilter) && issued >= cutoffStr;\n});\n\nif (filtered.length === 0) {\n  return [{json: {\n    hasData: false,\n    cityName:   cfg.cityName,\n    siteUrl:    cfg.siteUrl,\n    wpUser:     cfg.wpUser,\n    wpAppPass:  cfg.wpAppPass,\n    categoryId: cfg.categoryId,\n  }}];\n}\n\n// Group by subdivision\nconst bySubdivision = {};\nfiltered.forEach(p => {\n  const sub = (p.situssubdivision || p.legalsubdivision || 'General Area').trim() || 'General Area';\n  if (!bySubdivision[sub]) bySubdivision[sub] = [];\n  bySubdivision[sub].push(p);\n});\n\nreturn [{json: {\n  hasData:       true,\n  permits:       filtered,\n  bySubdivision,\n  count:         filtered.length,\n  cityName:      cfg.cityName,\n  siteUrl:       cfg.siteUrl,\n  wpUser:        cfg.wpUser,\n  wpAppPass:     cfg.wpAppPass,\n  categoryId:    cfg.categoryId,\n}}];\n"
+      },
+      "id": "056b7228-c084-49d1-866c-e001e79cc75f",
+      "name": "Process Permits",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "0a58e2b7-45b9-470a-9ae4-d600363965eb",
+              "leftValue": "={{ $json.hasData }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "78f7726c-4308-45d9-9a1f-f04013655e44",
+      "name": "Has Permits?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        960,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "\n// Build Qwen prompt for building permit digest\nconst data = items[0].json;\nconst { bySubdivision, count, cityName } = data;\n\nlet permitSummary = '';\nfor (const [sub, permits] of Object.entries(bySubdivision)) {\n  const builders = {};\n  permits.forEach(p => {\n    const b = (p.contractorname || p.contractor || '').trim();\n    if (b && !['NOT LISTED','N/A','NONE','UNKNOWN',''].includes(b.toUpperCase())) {\n      builders[b] = (builders[b] || 0) + 1;\n    }\n  });\n  const builderStr = Object.entries(builders)\n    .map(([b, c]) => `${b} (${c} permit${c > 1 ? 's' : ''})`).join(', ');\n  permitSummary += `Subdivision: ${sub} \u2014 ${permits.length} permit(s). ${builderStr ? 'Builders: ' + builderStr : ''}\\n`;\n}\n\nconst prompt = `You are a civic journalist writing for Melissa TX News, a community newspaper covering Melissa, Texas.\n\nWrite a news article about recent residential building permit activity using the data below. Follow the EXAMPLE exactly.\n\nABSOLUTE RULES (violation = failure):\n- Prose paragraphs ONLY. No bullets, dashes, numbered lists, or asterisks under any circumstances.\n- Every subdivision name and builder name must appear inside a grammatically complete sentence.\n- Group permits by subdivision into flowing paragraphs \u2014 one paragraph per subdivision or logical grouping.\n- If builder information is missing, omit the builder \u2014 never write \"not listed\", \"unknown\", \"not available\", or \"N/A\".\n- Forbidden phrases: \"valued as not reported\", \"builder not listed\", \"not available\", \"unknown builder\".\n- Article length: 250\u2013350 words. Factual local newspaper tone.\n- Output exactly: article title on line 1 (no \"Title:\" prefix), blank line, then article body.\n\nEXAMPLE OUTPUT:\nFourteen New Homes Break Ground Across Melissa Subdivisions\n\nResidential construction activity picked up across Melissa last month as developers broke ground on fourteen new single-family homes spanning three established subdivisions. The permits, issued through the county, reflect continued interest from buyers in one of the region's fastest-growing communities.\n\nThe largest concentration of new starts was in Light Farms, where D.R. Horton secured permits for six homes along the neighborhood's northern edge. Neighboring Lilyana recorded four new permits, with Toll Brothers accounting for three of those starts, continuing the builder's prominent presence in the enclave.\n\nThree additional permits were issued for homes in Mustang Lakes, a gated community near the city's western corridor. Village Homes was the builder of record on two of those projects.\n\nCity officials note that Melissa's residential pipeline remains robust heading into spring, with multiple new subdivision plats pending approval before the planning and zoning commission.\n\nPERMIT DATA:\n${permitSummary}\nTotal permits (last 60 days): ${count}\nCity: Melissa\n\nNow write the article:`;\n\nconst rawBody = JSON.stringify({\n  model: 'qwen2.5:3b',\n  prompt,\n  temperature: 0.3,\n  num_predict: 1500,\n  stream: false,\n});\n\nreturn [{json: {\n  rawBody,\n  cityName:   data.cityName,\n  siteUrl:    data.siteUrl,\n  wpUser:     data.wpUser,\n  wpAppPass:  data.wpAppPass,\n  categoryId: data.categoryId,\n}}];\n"
+      },
+      "id": "e5a391f9-f578-4a2c-a084-d754b91a3fe6",
+      "name": "Build Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://172.17.0.1:11434/api/generate",
+        "method": "POST",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.rawBody }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "4cf329fa-0597-4c1d-a9d2-20db2108de33",
+      "name": "Call Ollama",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "\n// Extract title and body from Ollama JSON response\nconst raw = (items[0].json.response || '').trim();\n\nconst lines = raw.split('\\n');\n\n// First non-blank line = title\nlet titleIdx = 0;\nwhile (titleIdx < lines.length && lines[titleIdx].trim() === '') titleIdx++;\nlet title = lines[titleIdx].trim()\n  .replace(/^(title[:\\-\\s]*)/i, '')\n  .replace(/\\*+/g, '');\n\n// Skip blank separator line\nlet bodyStart = titleIdx + 1;\nwhile (bodyStart < lines.length && lines[bodyStart].trim() === '') bodyStart++;\nlet body = lines.slice(bodyStart).join('\\n').trim();\n\n// Fallback: if title looks like body prose (> 150 chars or empty)\nif (!title || title.length > 150) {\n  const firstSentence = (body || raw).replace(/\\n/g, ' ').split(/(?<=[.!?])\\s+/)[0];\n  title = firstSentence.slice(0, 90).trim();\n  if (!body) body = raw;\n}\n\n// Strip forbidden phrases from body\nconst forbidden = [\n  /valued as not reported/gi, /builder not listed/gi,\n  /not available/gi, /unknown builder/gi,\n];\nforbidden.forEach(re => { body = body.replace(re, ''); });\n\n// Pass config fields forward for WP publish\nconst cfg = $('Config').first().json;\nreturn [{json: {\n  title,\n  body,\n  cityName:   cfg.cityName,\n  siteUrl:    cfg.siteUrl,\n  wpUser:     cfg.wpUser,\n  wpAppPass:  cfg.wpAppPass,\n  categoryId: cfg.categoryId,\n}}];\n"
+      },
+      "id": "22326d22-1f5d-42c8-9514-822abf6b9d5a",
+      "name": "Parse Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "\n// Query WP REST for recent posts in same category (2-day window)\nconst data = items[0].json;\nconst { siteUrl, wpUser, wpAppPass, categoryId } = data;\n\nconst cutoff = new Date();\ncutoff.setDate(cutoff.getDate() - 2);\n\nconst url = `${siteUrl}/wp-json/wp/v2/posts?categories=${categoryId}&after=${cutoff.toISOString()}&per_page=5&status=publish`;\nconst auth = 'Basic ' + Buffer.from(`${wpUser}:${wpAppPass}`).toString('base64');\n\nlet isDuplicate = false;\ntry {\n  const resp = await fetch(url, { headers: { 'Authorization': auth } });\n  const posts = await resp.json();\n  isDuplicate = Array.isArray(posts) && posts.length > 0;\n} catch (e) {\n  isDuplicate = false; // fail open\n}\n\nreturn [{json: {...data, isDuplicate}}];\n"
+      },
+      "id": "73175cd2-5000-43cb-9248-2401ba71f993",
+      "name": "Check Duplicate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "c9cd70d1-5972-4500-a8fa-e17b6f0b16de",
+              "leftValue": "={{ $json.isDuplicate }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "5e60efb8-31e1-414c-af16-92a483f53e12",
+      "name": "Is Duplicate?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2160,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.siteUrl }}/wp-json/wp/v2/posts",
+        "method": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"title\":\"{{ $json.title }}\",\"content\":\"{{ $json.body }}\",\"status\":\"publish\",\"categories\":[{{ $json.categoryId }}]}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "25d54f57-6b05-40d6-8be1-6c5860483f77",
+      "name": "Publish to WordPress",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2400,
+        0
+      ],
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "wp-basic-auth",
+          "name": "WP Basic Auth"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Fetch Permits",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Permits": {
+      "main": [
+        [
+          {
+            "node": "Process Permits",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Permits": {
+      "main": [
+        [
+          {
+            "node": "Has Permits?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Permits?": {
+      "main": [
+        [
+          {
+            "node": "Build Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Build Prompt": {
+      "main": [
+        [
+          {
+            "node": "Call Ollama",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Ollama": {
+      "main": [
+        [
+          {
+            "node": "Parse Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Response": {
+      "main": [
+        [
+          {
+            "node": "Check Duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Duplicate": {
+      "main": [
+        [
+          {
+            "node": "Is Duplicate?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Duplicate?": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Publish to WordPress",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "id": "06071da2-368c-4a6a-ac76-c8180ca2fc3f",
+  "tags": []
+}

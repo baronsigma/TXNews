@@ -1,0 +1,308 @@
+version: '3.8'
+
+# TXNews — 6-city civic news network
+# Single EC2 (Ubuntu 24) running all sites
+# Ollama runs on the HOST at 172.17.0.1:11434
+
+services:
+
+  # ─── Reverse Proxy ──────────────────────────────────────────────────────────
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: txnews-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - certbot_www:/var/www/certbot:ro
+      - certbot_certs:/etc/letsencrypt:ro
+    depends_on:
+      - wp-celina
+      - wp-anna
+      - wp-princeton
+      - wp-fate
+      - wp-melissa
+      - wp-fulshear
+    restart: unless-stopped
+    networks:
+      - txnews
+
+  # ─── Certbot (cert renewal) ──────────────────────────────────────────────────
+  certbot:
+    image: certbot/certbot:latest
+    container_name: txnews-certbot
+    volumes:
+      - certbot_certs:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    restart: unless-stopped
+
+  # ─── CELINA — The Celina Report (celinareport.com) ─────────────────────────
+  db-celina:
+    image: mysql:8.0
+    container_name: txnews-db-celina
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: wp_celina
+      MYSQL_USER: wp_celina
+      MYSQL_PASSWORD: ${DB_PASS_CELINA}
+    volumes:
+      - db_celina:/var/lib/mysql
+    restart: unless-stopped
+    networks:
+      - txnews
+
+  wp-celina:
+    image: wordpress:6.4-php8.2-apache
+    container_name: txnews-wp-celina
+    environment:
+      WORDPRESS_DB_HOST: db-celina
+      WORDPRESS_DB_NAME: wp_celina
+      WORDPRESS_DB_USER: wp_celina
+      WORDPRESS_DB_PASSWORD: ${DB_PASS_CELINA}
+      WORDPRESS_TABLE_PREFIX: wp_
+      WORDPRESS_DEBUG: 0
+    volumes:
+      - wp_celina:/var/www/html
+      - ./theme/civic-record:/var/www/html/wp-content/themes/civic-record
+    depends_on:
+      - db-celina
+    restart: unless-stopped
+    networks:
+      - txnews
+
+  # ─── ANNA — Anna Record (theannanews.com) ──────────────────────────────────
+  db-anna:
+    image: mysql:8.0
+    container_name: txnews-db-anna
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: wp_anna
+      MYSQL_USER: wp_anna
+      MYSQL_PASSWORD: ${DB_PASS_ANNA}
+    volumes:
+      - db_anna:/var/lib/mysql
+    restart: unless-stopped
+    networks:
+      - txnews
+
+  wp-anna:
+    image: wordpress:6.4-php8.2-apache
+    container_name: txnews-wp-anna
+    environment:
+      WORDPRESS_DB_HOST: db-anna
+      WORDPRESS_DB_NAME: wp_anna
+      WORDPRESS_DB_USER: wp_anna
+      WORDPRESS_DB_PASSWORD: ${DB_PASS_ANNA}
+      WORDPRESS_TABLE_PREFIX: wp_
+      WORDPRESS_DEBUG: 0
+    volumes:
+      - wp_anna:/var/www/html
+      - ./theme/civic-record:/var/www/html/wp-content/themes/civic-record
+    depends_on:
+      - db-anna
+    restart: unless-stopped
+    networks:
+      - txnews
+
+  # ─── PRINCETON — Princeton TX News (princetontxnews.com) ──────────────────
+  db-princeton:
+    image: mysql:8.0
+    container_name: txnews-db-princeton
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: wp_princeton
+      MYSQL_USER: wp_princeton
+      MYSQL_PASSWORD: ${DB_PASS_PRINCETON}
+    volumes:
+      - db_princeton:/var/lib/mysql
+    restart: unless-stopped
+    networks:
+      - txnews
+
+  wp-princeton:
+    image: wordpress:6.4-php8.2-apache
+    container_name: txnews-wp-princeton
+    environment:
+      WORDPRESS_DB_HOST: db-princeton
+      WORDPRESS_DB_NAME: wp_princeton
+      WORDPRESS_DB_USER: wp_princeton
+      WORDPRESS_DB_PASSWORD: ${DB_PASS_PRINCETON}
+      WORDPRESS_TABLE_PREFIX: wp_
+      WORDPRESS_DEBUG: 0
+    volumes:
+      - wp_princeton:/var/www/html
+      - ./theme/civic-record:/var/www/html/wp-content/themes/civic-record
+    depends_on:
+      - db-princeton
+    restart: unless-stopped
+    networks:
+      - txnews
+
+  # ─── FATE — Fate Daily Post (fatedailypost.com) ───────────────────────────
+  db-fate:
+    image: mysql:8.0
+    container_name: txnews-db-fate
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: wp_fate
+      MYSQL_USER: wp_fate
+      MYSQL_PASSWORD: ${DB_PASS_FATE}
+    volumes:
+      - db_fate:/var/lib/mysql
+    restart: unless-stopped
+    networks:
+      - txnews
+
+  wp-fate:
+    image: wordpress:6.4-php8.2-apache
+    container_name: txnews-wp-fate
+    environment:
+      WORDPRESS_DB_HOST: db-fate
+      WORDPRESS_DB_NAME: wp_fate
+      WORDPRESS_DB_USER: wp_fate
+      WORDPRESS_DB_PASSWORD: ${DB_PASS_FATE}
+      WORDPRESS_TABLE_PREFIX: wp_
+      WORDPRESS_DEBUG: 0
+    volumes:
+      - wp_fate:/var/www/html
+      - ./theme/civic-record:/var/www/html/wp-content/themes/civic-record
+    depends_on:
+      - db-fate
+    restart: unless-stopped
+    networks:
+      - txnews
+
+  # ─── MELISSA — Melissa TX News (melissatxnews.com) ────────────────────────
+  db-melissa:
+    image: mysql:8.0
+    container_name: txnews-db-melissa
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: wp_melissa
+      MYSQL_USER: wp_melissa
+      MYSQL_PASSWORD: ${DB_PASS_MELISSA}
+    volumes:
+      - db_melissa:/var/lib/mysql
+    restart: unless-stopped
+    networks:
+      - txnews
+
+  wp-melissa:
+    image: wordpress:6.4-php8.2-apache
+    container_name: txnews-wp-melissa
+    environment:
+      WORDPRESS_DB_HOST: db-melissa
+      WORDPRESS_DB_NAME: wp_melissa
+      WORDPRESS_DB_USER: wp_melissa
+      WORDPRESS_DB_PASSWORD: ${DB_PASS_MELISSA}
+      WORDPRESS_TABLE_PREFIX: wp_
+      WORDPRESS_DEBUG: 0
+    volumes:
+      - wp_melissa:/var/www/html
+      - ./theme/civic-record:/var/www/html/wp-content/themes/civic-record
+    depends_on:
+      - db-melissa
+    restart: unless-stopped
+    networks:
+      - txnews
+
+  # ─── FULSHEAR — The Fulshear Report (thefulshearreport.com) ───────────────
+  db-fulshear:
+    image: mysql:8.0
+    container_name: txnews-db-fulshear
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: wp_fulshear
+      MYSQL_USER: wp_fulshear
+      MYSQL_PASSWORD: ${DB_PASS_FULSHEAR}
+    volumes:
+      - db_fulshear:/var/lib/mysql
+    restart: unless-stopped
+    networks:
+      - txnews
+
+  wp-fulshear:
+    image: wordpress:6.4-php8.2-apache
+    container_name: txnews-wp-fulshear
+    environment:
+      WORDPRESS_DB_HOST: db-fulshear
+      WORDPRESS_DB_NAME: wp_fulshear
+      WORDPRESS_DB_USER: wp_fulshear
+      WORDPRESS_DB_PASSWORD: ${DB_PASS_FULSHEAR}
+      WORDPRESS_TABLE_PREFIX: wp_
+      WORDPRESS_DEBUG: 0
+    volumes:
+      - wp_fulshear:/var/www/html
+      - ./theme/civic-record:/var/www/html/wp-content/themes/civic-record
+    depends_on:
+      - db-fulshear
+    restart: unless-stopped
+    networks:
+      - txnews
+
+  # ─── n8n Workflow Automation ─────────────────────────────────────────────────
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: txnews-n8n
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=${N8N_HOST:-localhost}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD}
+      - WEBHOOK_URL=http://${EC2_PUBLIC_IP}:5678/
+      - GENERIC_TIMEZONE=America/Chicago
+      - TZ=America/Chicago
+      - N8N_LOG_LEVEL=info
+      - N8N_METRICS=false
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_MAX_AGE=168
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./n8n-workflows:/home/node/host-workflows:ro
+    restart: unless-stopped
+    networks:
+      - txnews
+
+  # ─── Playwright Scraper (city agenda scraping) ───────────────────────────────
+  scraper:
+    build:
+      context: ./scraper
+      dockerfile: Dockerfile
+    container_name: txnews-scraper
+    ports:
+      - "5001:5001"
+    environment:
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    networks:
+      - txnews
+
+volumes:
+  db_celina:
+  wp_celina:
+  db_anna:
+  wp_anna:
+  db_princeton:
+  wp_princeton:
+  db_fate:
+  wp_fate:
+  db_melissa:
+  wp_melissa:
+  db_fulshear:
+  wp_fulshear:
+  n8n_data:
+  certbot_certs:
+  certbot_www:
+
+networks:
+  txnews:
+    driver: bridge
