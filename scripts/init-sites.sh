@@ -78,11 +78,13 @@ wait_for_wp() {
   echo "  Waiting for $container DB connection…"
   local max=30
   local i=0
-  # Use a PHP-based check (wp eval) so we go through WordPress/MySQLi instead
-  # of the MariaDB CLI, which rejects MySQL 8.0 self-signed TLS certificates.
+  # Use --skip-wordpress + raw mysqli_connect() so we:
+  #   1. Don't require WP tables to exist yet (avoids "site not installed" error)
+  #   2. Go through PHP/MySQLi, not the MariaDB CLI (avoids SSL cert rejection)
   local last_err=""
-  until last_err=$(wp "$container" eval 'echo "db_ok";' --skip-plugins --skip-themes 2>&1) \
-      && echo "$last_err" | grep -q "db_ok"; do
+  until last_err=$(wp "$container" eval --skip-wordpress \
+      'if(@mysqli_connect(getenv("WORDPRESS_DB_HOST"),getenv("WORDPRESS_DB_USER"),getenv("WORDPRESS_DB_PASSWORD"),getenv("WORDPRESS_DB_NAME"))){echo "db_ok";}else{echo mysqli_connect_error();exit(1);}' \
+      2>&1) && echo "$last_err" | grep -q "db_ok"; do
     i=$((i + 1))
     if [ "$i" -ge "$max" ]; then
       echo "  ERROR: $container DB not ready after ${max} attempts. Aborting."
