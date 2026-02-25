@@ -78,8 +78,8 @@ if [ ! -f ".env" ]; then
   exit 1
 fi
 
-docker compose pull --quiet
-docker compose build --quiet
+docker compose pull
+docker compose build
 docker compose up -d
 
 echo "  Docker Compose stack started."
