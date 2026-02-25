@@ -25,23 +25,18 @@ apt-get install -y --no-install-recommends \
   ufw fail2ban
 
 # ── 2. Docker ─────────────────────────────────────────────────────────────────
-echo "[2/7] Installing Docker…"
-if ! command -v docker &>/dev/null; then
-  install -m 0755 -d /etc/apt/keyrings
-  curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
-    | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-  chmod a+r /etc/apt/keyrings/docker.gpg
-  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
-    https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" \
-    | tee /etc/apt/sources.list.d/docker.list
-  apt-get update -qq
-  apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
-  systemctl enable --now docker
-  echo "  Docker installed."
-else
-  echo "  Docker already installed — ensuring compose plugin is present…"
-  apt-get install -y docker-compose-plugin 2>/dev/null || true
-fi
+echo "[2/7] Installing Docker (official repo)…"
+install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
+  | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+chmod a+r /etc/apt/keyrings/docker.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+  https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" \
+  | tee /etc/apt/sources.list.d/docker.list
+apt-get update -qq
+apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+systemctl enable --now docker
+echo "  Docker ready."
 
 # ── 3. Ollama ─────────────────────────────────────────────────────────────────
 echo "[3/7] Installing Ollama (host service)…"
