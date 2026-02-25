@@ -43,9 +43,24 @@ declare -a SITES=(
 )
 
 # ─── WP-CLI helper ───────────────────────────────────────────────────────────
+# The wordpress:apache image has no WP-CLI; run it via the official wordpress:cli
+# image, sharing the WP container's volumes and network.
 wp() {
   local container="$1"; shift
-  docker exec "$container" wp --allow-root "$@"
+  local db_host db_name db_user db_pass
+  db_host=$(docker exec "$container" sh -c 'echo "$WORDPRESS_DB_HOST"')
+  db_name=$(docker exec "$container" sh -c 'echo "$WORDPRESS_DB_NAME"')
+  db_user=$(docker exec "$container" sh -c 'echo "$WORDPRESS_DB_USER"')
+  db_pass=$(docker exec "$container" sh -c 'echo "$WORDPRESS_DB_PASSWORD"')
+  docker run --rm \
+    --network txnews_txnews \
+    --volumes-from "$container" \
+    -e WORDPRESS_DB_HOST="$db_host" \
+    -e WORDPRESS_DB_NAME="$db_name" \
+    -e WORDPRESS_DB_USER="$db_user" \
+    -e WORDPRESS_DB_PASSWORD="$db_pass" \
+    wordpress:cli \
+    wp --allow-root "$@"
 }
 
 # ─── Wait for WordPress to be ready ──────────────────────────────────────────
@@ -55,7 +70,7 @@ wait_for_wp() {
   echo "  Waiting for $container DB connection…"
   local max=30
   local i=0
-  until docker exec "$container" wp --allow-root db check --quiet 2>/dev/null; do
+  until wp "$container" db check --quiet 2>/dev/null; do
     i=$((i + 1))
     if [ "$i" -ge "$max" ]; then
       echo "  ERROR: $container DB not ready after ${max} attempts. Aborting."
