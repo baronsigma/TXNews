@@ -40,7 +40,7 @@ echo "[3/4] Obtaining Let's Encrypt certificates…"
 FAILED=()
 for domain in "${!WP[@]}"; do
   echo "  → $domain"
-  if docker compose run --rm certbot certonly \
+  if docker compose run --rm --entrypoint certbot certbot certonly \
       --webroot -w /var/www/certbot \
       --email "$EMAIL" \
       --agree-tos \
