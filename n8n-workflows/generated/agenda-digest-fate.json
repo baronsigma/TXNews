@@ -12,7 +12,7 @@
           ]
         }
       },
-      "id": "255dc8c1-0538-4ba8-9839-2886aa1e05aa",
+      "id": "48fabbbd-6cc7-4596-a81d-1a231c6677f6",
       "name": "Schedule Trigger",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
@@ -28,43 +28,43 @@
         "assignments": {
           "assignments": [
             {
-              "id": "1f15dfae-7b12-4807-806f-840c17716c66",
+              "id": "9d875715-6216-4fc2-a83a-19450d2be5eb",
               "name": "cityName",
               "value": "Fate",
               "type": "string"
             },
             {
-              "id": "b978a743-7e95-491c-8b32-e9fb042bf126",
+              "id": "8dc84d1d-4ec8-4b4e-a482-91476d6e2815",
               "name": "publication",
               "value": "Fate Daily Post",
               "type": "string"
             },
             {
-              "id": "a0448ac9-a2c3-4d5c-a01a-7ed64a824dad",
+              "id": "4eea6b8f-076e-4a32-bf69-0a68aeb98c0e",
               "name": "siteUrl",
               "value": "https://fatedailypost.com",
               "type": "string"
             },
             {
-              "id": "27465c86-d5be-44b3-a7dd-eef3ff5af684",
+              "id": "9aa44fd8-01fb-48c8-9d4d-291c24dc2978",
               "name": "wpUser",
               "value": "admin",
               "type": "string"
             },
             {
-              "id": "f4094080-8879-4412-8df6-282b1082c577",
+              "id": "9f526df2-504e-4760-8955-727627988afc",
               "name": "wpAppPass",
-              "value": "bHbfiFPnRLVRfwywpMKfcj4J",
+              "value": "REPLACE_WITH_APP_PASS_FATE",
               "type": "string"
             },
             {
-              "id": "c8703b5b-1792-476a-80fc-11d63b8bd608",
+              "id": "0f11ab9c-4218-4264-a862-978b9150d8fe",
               "name": "categoryId",
               "value": 3,
               "type": "number"
             },
             {
-              "id": "05bbed87-bfdc-489b-bef6-3c5cf2f7e87d",
+              "id": "c04ac159-d673-4dec-998d-276f0b4a5649",
               "name": "scraperCity",
               "value": "fate",
               "type": "string"
@@ -73,7 +73,7 @@
         },
         "options": {}
       },
-      "id": "ab7ea55c-4fdf-4d27-8ec8-255d70e32895",
+      "id": "dcdf5d3a-74c1-4355-9fcd-1b4ca31be258",
       "name": "Config",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
@@ -87,7 +87,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "\n// Call the local Playwright scraper (txnews-scraper:5001)\nconst cfg = $('Config').first().json;\n\nlet result;\ntry {\n  const resp = await fetch('http://txnews-scraper:5001/scrape', {\n    method: 'POST',\n    headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify({ city: cfg.scraperCity }),\n  });\n  result = await resp.json();\n} catch (e) {\n  return [{json: {hasData: false, error: e.message, cityName: cfg.cityName}}];\n}\n\nif (!result.success || !result.agenda_text) {\n  return [{json: {\n    hasData:  false,\n    error:    result.error || 'No agenda text returned',\n    cityName: cfg.cityName,\n  }}];\n}\n\nreturn [{json: {\n  hasData:      true,\n  meetingTitle: result.meeting_title,\n  meetingDate:  result.meeting_date,\n  meetingType:  result.meeting_type,\n  agendaText:   result.agenda_text,\n  cityName:     cfg.cityName,\n  siteUrl:      cfg.siteUrl,\n  wpUser:       cfg.wpUser,\n  wpAppPass:    cfg.wpAppPass,\n  categoryId:   cfg.categoryId,\n}}];\n"
       },
-      "id": "575f8317-998a-490d-a3f2-a4e8213c4363",
+      "id": "fe888839-5784-4fdb-80d2-e6865a66113b",
       "name": "Fetch Agenda",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -106,7 +106,7 @@
           },
           "conditions": [
             {
-              "id": "6d0749c4-4cd1-4300-b385-554558be5caa",
+              "id": "a15f4d12-9859-409e-9d8d-c6a74203cad6",
               "leftValue": "={{ $json.hasData }}",
               "rightValue": true,
               "operator": {
@@ -119,7 +119,7 @@
         },
         "options": {}
       },
-      "id": "ff970432-3cde-4f31-a814-49ab88a4ddfa",
+      "id": "980cfe40-77ec-462c-b26a-d902f87db683",
       "name": "Has Agenda?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
@@ -131,9 +131,9 @@
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "\nconst data = items[0].json;\nconst { meetingTitle, meetingDate, meetingType, cityName } = data;\nconst agendaText = data.agendaText || '';\nif (!agendaText) {\n  // Scraper returned no agenda text - nothing to publish\n  return [];\n}\n\nconst prompt = `You are a civic journalist writing for Fate Daily Post, a community newspaper covering Fate, Texas.\n\nWrite a news article previewing an upcoming ${meetingType || 'city council'} meeting based on the agenda text below.\n\nABSOLUTE RULES:\n- Prose paragraphs ONLY. No bullets, dashes, numbered lists, or asterisks.\n- Summarize key agenda items in plain English for a general audience.\n- Include the meeting date, body name, and key action items in complete sentences.\n- Do not reproduce the agenda verbatim \u2014 synthesize and explain what each item means for residents.\n- 200\u2013350 words. Factual local newspaper tone.\n- Output: article title on line 1 (no prefix), blank line, then article body.\n\nEXAMPLE OUTPUT:\nFate City Council to Consider Rezoning Request and Road Bond at March 3 Meeting\n\nThe Fate City Council will convene Monday, March 3, for its regular monthly meeting, where members are expected to take up a rezoning request from a residential developer along the city's northern growth corridor and consider authorizing a bond package for road improvements near the new elementary school campus.\n\nThe rezoning item seeks to reclassify approximately 47 acres from agricultural to planned development to accommodate a 180-unit townhome community. The project has previously received a favorable recommendation from the Planning and Zoning Commission, clearing the way for a council vote.\n\nAlso on the agenda is a resolution to call a May bond election, which would ask voters to approve up to $18 million in general obligation bonds to fund the extension of a county road and intersection upgrades at two high-priority safety locations.\n\nThe council is also set to hear a presentation from the city manager on infrastructure needs associated with ongoing residential expansion and to approve routine consent items. The meeting begins at 6:30 p.m. at Fate City Hall.\n\nMEETING INFORMATION:\nTitle: ${meetingTitle}\nDate: ${meetingDate}\nType: ${meetingType}\n\nAGENDA TEXT (from official PDF):\n${agendaText.slice(0, 6000)}\n\nNow write the article:`;\n\nconst rawBody = JSON.stringify({\n  model: 'qwen2.5:3b',\n  prompt,\n  temperature: 0.3,\n  num_predict: 1500,\n  stream: false,\n});\n\nreturn [{json: {\n  rawBody,\n  cityName:   data.cityName,\n  siteUrl:    data.siteUrl,\n  wpUser:     data.wpUser,\n  wpAppPass:  data.wpAppPass,\n  categoryId: data.categoryId,\n}}];\n"
+        "jsCode": "\nconst data = items[0].json;\nconst { meetingTitle, meetingDate, meetingType, agendaText, cityName } = data;\n\nconst prompt = `You are a civic journalist writing for Fate Daily Post, a community newspaper covering Fate, Texas.\n\nWrite a news article previewing an upcoming ${meetingType || 'city council'} meeting based on the agenda text below.\n\nABSOLUTE RULES:\n- Prose paragraphs ONLY. No bullets, dashes, numbered lists, or asterisks.\n- Summarize key agenda items in plain English for a general audience.\n- Include the meeting date, body name, and key action items in complete sentences.\n- Do not reproduce the agenda verbatim \u2014 synthesize and explain what each item means for residents.\n- 200\u2013350 words. Factual local newspaper tone.\n- Output: article title on line 1 (no prefix), blank line, then article body.\n\nEXAMPLE OUTPUT:\nFate City Council to Consider Rezoning Request and Road Bond at March 3 Meeting\n\nThe Fate City Council will convene Monday, March 3, for its regular monthly meeting, where members are expected to take up a rezoning request from a residential developer along the city's northern growth corridor and consider authorizing a bond package for road improvements near the new elementary school campus.\n\nThe rezoning item seeks to reclassify approximately 47 acres from agricultural to planned development to accommodate a 180-unit townhome community. The project has previously received a favorable recommendation from the Planning and Zoning Commission, clearing the way for a council vote.\n\nAlso on the agenda is a resolution to call a May bond election, which would ask voters to approve up to $18 million in general obligation bonds to fund the extension of a county road and intersection upgrades at two high-priority safety locations.\n\nThe council is also set to hear a presentation from the city manager on infrastructure needs associated with ongoing residential expansion and to approve routine consent items. The meeting begins at 6:30 p.m. at Fate City Hall.\n\nMEETING INFORMATION:\nTitle: ${meetingTitle}\nDate: ${meetingDate}\nType: ${meetingType}\n\nAGENDA TEXT (from official PDF):\n${agendaText.slice(0, 6000)}\n\nNow write the article:`;\n\nconst rawBody = JSON.stringify({\n  model: 'qwen2.5:3b',\n  prompt,\n  temperature: 0.3,\n  num_predict: 1500,\n  stream: false,\n});\n\nreturn [{json: {\n  rawBody,\n  cityName:   data.cityName,\n  siteUrl:    data.siteUrl,\n  wpUser:     data.wpUser,\n  wpAppPass:  data.wpAppPass,\n  categoryId: data.categoryId,\n}}];\n"
       },
-      "id": "cb55a276-9648-4f79-a75e-1bce73c58b3d",
+      "id": "0410e774-fac6-4d3d-8b15-47400357e65d",
       "name": "Build Prompt",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -154,7 +154,7 @@
           "timeout": 120000
         }
       },
-      "id": "3c8c93e7-3881-4d17-9609-aba3cbe9c683",
+      "id": "6cbf927e-54b9-4837-96a0-4845a69df227",
       "name": "Call Ollama",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -168,7 +168,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "\n// Extract title and body from Ollama JSON response\nconst raw = (items[0].json.response || '').trim();\n\nconst lines = raw.split('\\n');\n\n// First non-blank line = title\nlet titleIdx = 0;\nwhile (titleIdx < lines.length && lines[titleIdx].trim() === '') titleIdx++;\nlet title = lines[titleIdx].trim()\n  .replace(/^(title[:\\-\\s]*)/i, '')\n  .replace(/\\*+/g, '');\n\n// Skip blank separator line\nlet bodyStart = titleIdx + 1;\nwhile (bodyStart < lines.length && lines[bodyStart].trim() === '') bodyStart++;\nlet body = lines.slice(bodyStart).join('\\n').trim();\n\n// Fallback: if title looks like body prose (> 150 chars or empty)\nif (!title || title.length > 150) {\n  const firstSentence = (body || raw).replace(/\\n/g, ' ').split(/(?<=[.!?])\\s+/)[0];\n  title = firstSentence.slice(0, 90).trim();\n  if (!body) body = raw;\n}\n\n// Strip forbidden phrases from body\nconst forbidden = [\n  /valued as not reported/gi, /builder not listed/gi,\n  /not available/gi, /unknown builder/gi,\n];\nforbidden.forEach(re => { body = body.replace(re, ''); });\n\n// Pass config fields forward for WP publish\nconst cfg = $('Config').first().json;\nreturn [{json: {\n  title,\n  body,\n  cityName:   cfg.cityName,\n  siteUrl:    cfg.siteUrl,\n  wpUser:     cfg.wpUser,\n  wpAppPass:  cfg.wpAppPass,\n  categoryId: cfg.categoryId,\n}}];\n"
       },
-      "id": "1db8bf9f-6258-43b3-b51e-4545ae6dc5cf",
+      "id": "c0058f7e-8903-46fe-86a2-96d5409e6bb8",
       "name": "Parse Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -182,7 +182,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "\n// Query WP REST for recent posts in same category (3-day window)\nconst data = items[0].json;\nconst { siteUrl, wpUser, wpAppPass, categoryId } = data;\n\nconst cutoff = new Date();\ncutoff.setDate(cutoff.getDate() - 3);\n\nconst url = `${siteUrl}/wp-json/wp/v2/posts?categories=${categoryId}&after=${cutoff.toISOString()}&per_page=5&status=publish`;\nconst auth = 'Basic ' + Buffer.from(`${wpUser}:${wpAppPass}`).toString('base64');\n\nlet isDuplicate = false;\ntry {\n  const resp = await fetch(url, { headers: { 'Authorization': auth } });\n  const posts = await resp.json();\n  isDuplicate = Array.isArray(posts) && posts.length > 0;\n} catch (e) {\n  isDuplicate = false; // fail open\n}\n\nreturn [{json: {...data, isDuplicate}}];\n"
       },
-      "id": "4780a6ee-4b82-494d-903e-3c96dcba9bda",
+      "id": "c500fd1f-6733-4861-a84f-71533a5f8287",
       "name": "Check Duplicate",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -201,7 +201,7 @@
           },
           "conditions": [
             {
-              "id": "44555955-791a-438a-9111-f658bb02c277",
+              "id": "73da93f5-770c-4a04-b1b0-4eeb7264439c",
               "leftValue": "={{ $json.isDuplicate }}",
               "rightValue": false,
               "operator": {
@@ -214,7 +214,7 @@
         },
         "options": {}
       },
-      "id": "7948a053-9d13-4a61-8947-5dc6e7e77227",
+      "id": "62ee6144-3980-465f-9c1f-6ad6b9311adc",
       "name": "Is Duplicate?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
@@ -236,7 +236,7 @@
           "timeout": 30000
         }
       },
-      "id": "54538306-b885-41e8-a7a7-7738eff66501",
+      "id": "2848f834-b697-416c-a776-c22c359b1c5d",
       "name": "Publish to WordPress",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -359,6 +359,6 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "id": "9d10abbd-0a79-4f27-aeb6-9cf62f394082",
+  "id": "0a5aefb7-ddff-43a4-8bc6-d61b1b606ebc",
   "tags": []
 }

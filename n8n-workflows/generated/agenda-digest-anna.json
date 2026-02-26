@@ -12,7 +12,7 @@
           ]
         }
       },
-      "id": "ba2ef146-74ac-4167-859c-907d422711ec",
+      "id": "259118f8-8a54-487a-b9d2-ec82df430b98",
       "name": "Schedule Trigger",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
@@ -28,43 +28,43 @@
         "assignments": {
           "assignments": [
             {
-              "id": "5b966d45-9788-4d73-8059-2820fa0eda9c",
+              "id": "9e3bd8a5-e5ca-4b35-8e28-9ec0cbdebd6a",
               "name": "cityName",
               "value": "Anna",
               "type": "string"
             },
             {
-              "id": "ea33c4d0-d4f1-4bb5-bfc6-90773d487702",
+              "id": "c988eb34-d0fc-490d-a90c-4d76c677730f",
               "name": "publication",
               "value": "Anna Record",
               "type": "string"
             },
             {
-              "id": "91555f27-5bc5-4dd1-ae2d-abc038f72bdc",
+              "id": "4109b22b-aaca-457e-a71a-4ffeea9b1502",
               "name": "siteUrl",
               "value": "https://theannanews.com",
               "type": "string"
             },
             {
-              "id": "b2063c12-a7a5-4e9e-a0de-ba18b0da7e91",
+              "id": "6c424fbc-630c-4a03-81b3-5bb03f28921e",
               "name": "wpUser",
               "value": "admin",
               "type": "string"
             },
             {
-              "id": "61e813f8-c4a7-4646-854c-1af8b0eddcf9",
+              "id": "d4305e76-2e57-4985-a9c0-15dec6833e62",
               "name": "wpAppPass",
-              "value": "1mOFp4MY1aVUECgpKkolPfxW",
+              "value": "REPLACE_WITH_APP_PASS_ANNA",
               "type": "string"
             },
             {
-              "id": "3f9d1e5b-cc00-4aa7-b906-0a9f81466cc4",
+              "id": "ee0f64a5-a292-489d-a639-003d3ec4cd7a",
               "name": "categoryId",
               "value": 3,
               "type": "number"
             },
             {
-              "id": "e335f5eb-64b6-4640-8c9a-d7ea39d0c230",
+              "id": "eb1e636d-cc57-4d2e-88bd-3e5888413c3d",
               "name": "scraperCity",
               "value": "anna",
               "type": "string"
@@ -73,7 +73,7 @@
         },
         "options": {}
       },
-      "id": "1a942756-fa9e-4027-a653-c7893ef9ef50",
+      "id": "1677b1a2-7e09-4a30-9745-c1f4df4b2dc1",
       "name": "Config",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
@@ -87,7 +87,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "\n// Call the local Playwright scraper (txnews-scraper:5001)\nconst cfg = $('Config').first().json;\n\nlet result;\ntry {\n  const resp = await fetch('http://txnews-scraper:5001/scrape', {\n    method: 'POST',\n    headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify({ city: cfg.scraperCity }),\n  });\n  result = await resp.json();\n} catch (e) {\n  return [{json: {hasData: false, error: e.message, cityName: cfg.cityName}}];\n}\n\nif (!result.success || !result.agenda_text) {\n  return [{json: {\n    hasData:  false,\n    error:    result.error || 'No agenda text returned',\n    cityName: cfg.cityName,\n  }}];\n}\n\nreturn [{json: {\n  hasData:      true,\n  meetingTitle: result.meeting_title,\n  meetingDate:  result.meeting_date,\n  meetingType:  result.meeting_type,\n  agendaText:   result.agenda_text,\n  cityName:     cfg.cityName,\n  siteUrl:      cfg.siteUrl,\n  wpUser:       cfg.wpUser,\n  wpAppPass:    cfg.wpAppPass,\n  categoryId:   cfg.categoryId,\n}}];\n"
       },
-      "id": "440b0f9a-bad4-4602-9e1a-4b64c92b1ce3",
+      "id": "98787095-1b07-40d1-825e-169ace7910f6",
       "name": "Fetch Agenda",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -106,7 +106,7 @@
           },
           "conditions": [
             {
-              "id": "4fb8ab1b-47b0-40d2-a976-ca5b35214a77",
+              "id": "2bdd73a8-8ae1-49f6-afe0-959c16289e45",
               "leftValue": "={{ $json.hasData }}",
               "rightValue": true,
               "operator": {
@@ -119,7 +119,7 @@
         },
         "options": {}
       },
-      "id": "1c705e79-7a09-43fb-b218-a2ae368c2773",
+      "id": "b75f87bb-dc17-4a00-a964-65f2977f736a",
       "name": "Has Agenda?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
@@ -131,9 +131,9 @@
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "\nconst data = items[0].json;\nconst { meetingTitle, meetingDate, meetingType, cityName } = data;\nconst agendaText = data.agendaText || '';\nif (!agendaText) {\n  // Scraper returned no agenda text - nothing to publish\n  return [];\n}\n\nconst prompt = `You are a civic journalist writing for Anna Record, a community newspaper covering Anna, Texas.\n\nWrite a news article previewing an upcoming ${meetingType || 'city council'} meeting based on the agenda text below.\n\nABSOLUTE RULES:\n- Prose paragraphs ONLY. No bullets, dashes, numbered lists, or asterisks.\n- Summarize key agenda items in plain English for a general audience.\n- Include the meeting date, body name, and key action items in complete sentences.\n- Do not reproduce the agenda verbatim \u2014 synthesize and explain what each item means for residents.\n- 200\u2013350 words. Factual local newspaper tone.\n- Output: article title on line 1 (no prefix), blank line, then article body.\n\nEXAMPLE OUTPUT:\nAnna City Council to Consider Rezoning Request and Road Bond at March 3 Meeting\n\nThe Anna City Council will convene Monday, March 3, for its regular monthly meeting, where members are expected to take up a rezoning request from a residential developer along the city's northern growth corridor and consider authorizing a bond package for road improvements near the new elementary school campus.\n\nThe rezoning item seeks to reclassify approximately 47 acres from agricultural to planned development to accommodate a 180-unit townhome community. The project has previously received a favorable recommendation from the Planning and Zoning Commission, clearing the way for a council vote.\n\nAlso on the agenda is a resolution to call a May bond election, which would ask voters to approve up to $18 million in general obligation bonds to fund the extension of a county road and intersection upgrades at two high-priority safety locations.\n\nThe council is also set to hear a presentation from the city manager on infrastructure needs associated with ongoing residential expansion and to approve routine consent items. The meeting begins at 6:30 p.m. at Anna City Hall.\n\nMEETING INFORMATION:\nTitle: ${meetingTitle}\nDate: ${meetingDate}\nType: ${meetingType}\n\nAGENDA TEXT (from official PDF):\n${agendaText.slice(0, 6000)}\n\nNow write the article:`;\n\nconst rawBody = JSON.stringify({\n  model: 'qwen2.5:3b',\n  prompt,\n  temperature: 0.3,\n  num_predict: 1500,\n  stream: false,\n});\n\nreturn [{json: {\n  rawBody,\n  cityName:   data.cityName,\n  siteUrl:    data.siteUrl,\n  wpUser:     data.wpUser,\n  wpAppPass:  data.wpAppPass,\n  categoryId: data.categoryId,\n}}];\n"
+        "jsCode": "\nconst data = items[0].json;\nconst { meetingTitle, meetingDate, meetingType, agendaText, cityName } = data;\n\nconst prompt = `You are a civic journalist writing for Anna Record, a community newspaper covering Anna, Texas.\n\nWrite a news article previewing an upcoming ${meetingType || 'city council'} meeting based on the agenda text below.\n\nABSOLUTE RULES:\n- Prose paragraphs ONLY. No bullets, dashes, numbered lists, or asterisks.\n- Summarize key agenda items in plain English for a general audience.\n- Include the meeting date, body name, and key action items in complete sentences.\n- Do not reproduce the agenda verbatim \u2014 synthesize and explain what each item means for residents.\n- 200\u2013350 words. Factual local newspaper tone.\n- Output: article title on line 1 (no prefix), blank line, then article body.\n\nEXAMPLE OUTPUT:\nAnna City Council to Consider Rezoning Request and Road Bond at March 3 Meeting\n\nThe Anna City Council will convene Monday, March 3, for its regular monthly meeting, where members are expected to take up a rezoning request from a residential developer along the city's northern growth corridor and consider authorizing a bond package for road improvements near the new elementary school campus.\n\nThe rezoning item seeks to reclassify approximately 47 acres from agricultural to planned development to accommodate a 180-unit townhome community. The project has previously received a favorable recommendation from the Planning and Zoning Commission, clearing the way for a council vote.\n\nAlso on the agenda is a resolution to call a May bond election, which would ask voters to approve up to $18 million in general obligation bonds to fund the extension of a county road and intersection upgrades at two high-priority safety locations.\n\nThe council is also set to hear a presentation from the city manager on infrastructure needs associated with ongoing residential expansion and to approve routine consent items. The meeting begins at 6:30 p.m. at Anna City Hall.\n\nMEETING INFORMATION:\nTitle: ${meetingTitle}\nDate: ${meetingDate}\nType: ${meetingType}\n\nAGENDA TEXT (from official PDF):\n${agendaText.slice(0, 6000)}\n\nNow write the article:`;\n\nconst rawBody = JSON.stringify({\n  model: 'qwen2.5:3b',\n  prompt,\n  temperature: 0.3,\n  num_predict: 1500,\n  stream: false,\n});\n\nreturn [{json: {\n  rawBody,\n  cityName:   data.cityName,\n  siteUrl:    data.siteUrl,\n  wpUser:     data.wpUser,\n  wpAppPass:  data.wpAppPass,\n  categoryId: data.categoryId,\n}}];\n"
       },
-      "id": "ac90adf6-2878-4ad7-99d2-799715eb2ea1",
+      "id": "37e45d04-ceab-4491-ba7d-574e5332d406",
       "name": "Build Prompt",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -154,7 +154,7 @@
           "timeout": 120000
         }
       },
-      "id": "1619cc88-43ac-4610-8ff5-ca9d5218e286",
+      "id": "a5aa3683-b009-43bb-8613-58a7ab907c2c",
       "name": "Call Ollama",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -168,7 +168,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "\n// Extract title and body from Ollama JSON response\nconst raw = (items[0].json.response || '').trim();\n\nconst lines = raw.split('\\n');\n\n// First non-blank line = title\nlet titleIdx = 0;\nwhile (titleIdx < lines.length && lines[titleIdx].trim() === '') titleIdx++;\nlet title = lines[titleIdx].trim()\n  .replace(/^(title[:\\-\\s]*)/i, '')\n  .replace(/\\*+/g, '');\n\n// Skip blank separator line\nlet bodyStart = titleIdx + 1;\nwhile (bodyStart < lines.length && lines[bodyStart].trim() === '') bodyStart++;\nlet body = lines.slice(bodyStart).join('\\n').trim();\n\n// Fallback: if title looks like body prose (> 150 chars or empty)\nif (!title || title.length > 150) {\n  const firstSentence = (body || raw).replace(/\\n/g, ' ').split(/(?<=[.!?])\\s+/)[0];\n  title = firstSentence.slice(0, 90).trim();\n  if (!body) body = raw;\n}\n\n// Strip forbidden phrases from body\nconst forbidden = [\n  /valued as not reported/gi, /builder not listed/gi,\n  /not available/gi, /unknown builder/gi,\n];\nforbidden.forEach(re => { body = body.replace(re, ''); });\n\n// Pass config fields forward for WP publish\nconst cfg = $('Config').first().json;\nreturn [{json: {\n  title,\n  body,\n  cityName:   cfg.cityName,\n  siteUrl:    cfg.siteUrl,\n  wpUser:     cfg.wpUser,\n  wpAppPass:  cfg.wpAppPass,\n  categoryId: cfg.categoryId,\n}}];\n"
       },
-      "id": "1054584c-8410-486c-abfa-cabf2c2a2d0b",
+      "id": "128eb5fe-64a6-44a0-8fc9-d39591f0d62a",
       "name": "Parse Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -182,7 +182,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "\n// Query WP REST for recent posts in same category (3-day window)\nconst data = items[0].json;\nconst { siteUrl, wpUser, wpAppPass, categoryId } = data;\n\nconst cutoff = new Date();\ncutoff.setDate(cutoff.getDate() - 3);\n\nconst url = `${siteUrl}/wp-json/wp/v2/posts?categories=${categoryId}&after=${cutoff.toISOString()}&per_page=5&status=publish`;\nconst auth = 'Basic ' + Buffer.from(`${wpUser}:${wpAppPass}`).toString('base64');\n\nlet isDuplicate = false;\ntry {\n  const resp = await fetch(url, { headers: { 'Authorization': auth } });\n  const posts = await resp.json();\n  isDuplicate = Array.isArray(posts) && posts.length > 0;\n} catch (e) {\n  isDuplicate = false; // fail open\n}\n\nreturn [{json: {...data, isDuplicate}}];\n"
       },
-      "id": "4a800c60-f04b-4bfa-814e-874b3663bdba",
+      "id": "37d25b24-8c3a-48d4-8772-2bdc20db52da",
       "name": "Check Duplicate",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -201,7 +201,7 @@
           },
           "conditions": [
             {
-              "id": "38f8a62d-3c13-4f94-a355-573864d1701f",
+              "id": "f8df5870-d28d-4c48-8877-178996b429d9",
               "leftValue": "={{ $json.isDuplicate }}",
               "rightValue": false,
               "operator": {
@@ -214,7 +214,7 @@
         },
         "options": {}
       },
-      "id": "9fd17f76-bd1d-4748-b332-fa7eb8527df9",
+      "id": "0c599e74-99ee-4f6f-9681-5915606f0d98",
       "name": "Is Duplicate?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
@@ -236,7 +236,7 @@
           "timeout": 30000
         }
       },
-      "id": "e19e5e71-c2d6-41b4-ad8e-9108eeded504",
+      "id": "5e177e75-eaf7-43e2-877e-d1da84066df5",
       "name": "Publish to WordPress",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -359,6 +359,6 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "id": "dde46595-155e-4f9f-9069-245b35739816",
+  "id": "8e4f9e0b-f254-4354-981a-7e6ac724c44f",
   "tags": []
 }

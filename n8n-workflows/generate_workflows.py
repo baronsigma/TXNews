@@ -21,11 +21,27 @@ Note on category IDs (set up by init-sites.sh in this order):
 """
 
 import json
+import os
 import uuid
 from pathlib import Path
 
 OUT_DIR = Path(__file__).parent / "generated"
 OUT_DIR.mkdir(exist_ok=True)
+
+# Load .env from repo root if present (so passwords can be embedded at generate time)
+_env_file = Path(__file__).parent.parent / ".env"
+if _env_file.exists():
+    for _line in _env_file.read_text().splitlines():
+        _line = _line.strip()
+        if _line and not _line.startswith("#") and "=" in _line:
+            _k, _, _v = _line.partition("=")
+            os.environ.setdefault(_k.strip(), _v.strip())
+
+
+def _app_pass(city_key: str) -> str:
+    """Return WP Application Password for the given city key, or a placeholder."""
+    env_key = f"WP_APP_PASS_{city_key.upper()}"
+    return os.environ.get(env_key, f"REPLACE_WITH_APP_PASS_{city_key.upper()}")
 
 OLLAMA_URL  = "http://172.17.0.1:11434/api/generate"
 OLLAMA_MODEL = "qwen2.5:3b"
@@ -406,7 +422,7 @@ def build_permit_workflow(city: dict) -> dict:
             "publication":   city["publication"],
             "siteUrl":       city["site_url"],
             "wpUser":        city["wp_user"],
-            "wpAppPass":     "REPLACE_WITH_APP_PASS_" + city["key"].upper(),
+            "wpAppPass":     _app_pass(city["key"]),
             "categoryId":    city["category_id"],
             "cadCityFilter": city["cad_city_filter"],
             "dataUrl":       data_url,
@@ -556,7 +572,7 @@ def build_license_workflow(city: dict) -> dict:
             "publication": city["publication"],
             "siteUrl":     city["site_url"],
             "wpUser":      city["wp_user"],
-            "wpAppPass":   "REPLACE_WITH_APP_PASS_" + city["key"].upper(),
+            "wpAppPass":   _app_pass(city["key"]),
             "categoryId":  city["category_id"],
             "tdlrFilter":  city["tdlr_filter"],
             "dataUrl":     data_url,
@@ -699,7 +715,7 @@ def build_agenda_workflow(city: dict) -> dict:
             "publication": city["publication"],
             "siteUrl":     city["site_url"],
             "wpUser":      city["wp_user"],
-            "wpAppPass":   "REPLACE_WITH_APP_PASS_" + city["key"].upper(),
+            "wpAppPass":   _app_pass(city["key"]),
             "categoryId":  city["category_id"],
             "scraperCity": city["scraper_city"],
         }),
@@ -759,10 +775,11 @@ def main():
 
     print(f"\n{len(generated)} workflow files written to {OUT_DIR}/")
     print("\nNext steps:")
-    print("1. Replace REPLACE_WITH_APP_PASS_* in each JSON with real WP Application Passwords")
-    print("   (or set up a shared 'WP Basic Auth' credential in n8n and link it)")
+    print("1. If WP_APP_PASS_* were not in .env, edit the Config node in each imported workflow")
+    print("   OR add WP_APP_PASS_<CITY> vars to .env and re-run this script.")
     print("2. In n8n: Settings → Import → select each JSON file")
-    print("3. Activate each workflow after import")
+    print("3. Create a 'WP Basic Auth' credential in n8n (user: admin, pass: <app-password>)")
+    print("4. Activate each workflow after import")
 
 
 if __name__ == "__main__":
