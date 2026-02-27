@@ -12,7 +12,7 @@
           ]
         }
       },
-      "id": "136866dc-2630-4032-9601-ac1f6124b79b",
+      "id": "db71b3e9-7845-4ef2-91b1-d2fa26e180aa",
       "name": "Schedule Trigger",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
@@ -28,49 +28,49 @@
         "assignments": {
           "assignments": [
             {
-              "id": "a3ca0917-1016-43f3-988d-abbf2c59f57c",
+              "id": "5ff537b6-8987-40ae-be90-f56f77f3c50c",
               "name": "cityName",
               "value": "Fulshear",
               "type": "string"
             },
             {
-              "id": "f05fe843-db10-4701-b3c6-00b513749904",
+              "id": "c3067355-1bfa-4368-a606-e41355054c18",
               "name": "publication",
               "value": "The Fulshear Report",
               "type": "string"
             },
             {
-              "id": "ae55174f-dfa8-4a95-a27d-42e873536bdd",
+              "id": "3cef91fc-7343-4f1f-a0e5-7e62fb0df246",
               "name": "siteUrl",
               "value": "https://thefulshearreport.com",
               "type": "string"
             },
             {
-              "id": "0292c9b3-da4c-4e40-ab98-cbc670b89f13",
+              "id": "464528ff-5d82-4ab2-bd26-bc22b2db6a75",
               "name": "wpUser",
               "value": "admin",
               "type": "string"
             },
             {
-              "id": "d3889481-2b1e-4db8-a77b-5ae35def7c64",
+              "id": "072e8083-75f6-4beb-832d-442e257dd26f",
               "name": "wpAppPass",
               "value": "REPLACE_WITH_APP_PASS_FULSHEAR",
               "type": "string"
             },
             {
-              "id": "69a1e4aa-49fe-4780-adc5-86eb2e176a3a",
+              "id": "e89ab39f-03c9-4ba0-ae46-4e2e3d6df8aa",
               "name": "categoryId",
               "value": 4,
               "type": "number"
             },
             {
-              "id": "26c6abf9-a69c-4b3b-9853-4a983605510f",
+              "id": "15324dcc-a99f-4dfd-8cbc-a17d1af26f38",
               "name": "tdlrFilter",
               "value": "FULSHEAR",
               "type": "string"
             },
             {
-              "id": "60f07f27-99aa-4380-bb73-1f52ef90ccbd",
+              "id": "7bea829f-006c-42eb-8b2b-5415dc153b91",
               "name": "dataUrl",
               "value": "https://data.texas.gov/resource/7358-krk7.json?$where=business_city_state_zip+like+'FULSHEAR%25'&$limit=200&$order=license_expiration_date+DESC",
               "type": "string"
@@ -79,7 +79,7 @@
         },
         "options": {}
       },
-      "id": "850d6a17-f5f6-49f7-968d-ba861cf47502",
+      "id": "bc44e361-29a4-4ec5-b525-28132f4042d1",
       "name": "Config",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
@@ -97,7 +97,7 @@
           "timeout": 30000
         }
       },
-      "id": "e2e91a22-9933-4205-a00a-2cd9f36c4b35",
+      "id": "01f32a24-4613-46e8-8fcb-57f91d6ca4c7",
       "name": "Fetch Licenses",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -111,7 +111,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "\nconst allLicenses = items[0].json;\nif (!Array.isArray(allLicenses)) {\n  return [{json: {hasData: false}}];\n}\n\nconst cfg = $('Config').first().json;\nconst filter = (cfg.tdlrFilter || '').toUpperCase();\n\nconst active = allLicenses.filter(lic => {\n  const city   = (lic.business_city_state_zip || lic.city || '').toUpperCase();\n  const status = (lic.license_status || lic.status || '').toUpperCase();\n  return city.includes(filter) && (!status || status === 'ACTIVE' || status === 'ISSUED');\n});\n\nif (active.length === 0) {\n  return [{json: {hasData: false, cityName: cfg.cityName}}];\n}\n\nconst byTrade = {};\nactive.forEach(lic => {\n  const trade = (lic.license_type || lic.trade_type || lic.program || 'General').trim();\n  if (!byTrade[trade]) byTrade[trade] = [];\n  byTrade[trade].push(lic);\n});\n\nreturn [{json: {\n  hasData:    true,\n  byTrade,\n  count:      active.length,\n  cityName:   cfg.cityName,\n  siteUrl:    cfg.siteUrl,\n  wpUser:     cfg.wpUser,\n  wpAppPass:  cfg.wpAppPass,\n  categoryId: cfg.categoryId,\n}}];\n"
       },
-      "id": "ed29b0f9-9894-4677-8e24-85be92c033ad",
+      "id": "b380881d-ef39-423d-8517-9e764724a944",
       "name": "Process Licenses",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -130,7 +130,7 @@
           },
           "conditions": [
             {
-              "id": "4675b198-f94e-4a10-b218-8a03d094fd36",
+              "id": "57777c98-7aa9-4a11-8b97-0cc279423110",
               "leftValue": "={{ $json.hasData }}",
               "rightValue": true,
               "operator": {
@@ -143,7 +143,7 @@
         },
         "options": {}
       },
-      "id": "dde81c71-6860-49be-b59a-db371fc736c1",
+      "id": "28790ceb-4e8b-4711-b704-23fd06e93315",
       "name": "Has Licenses?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
@@ -157,7 +157,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "\nconst data = items[0].json;\nconst { byTrade, count, cityName } = data;\n\nlet tradeSummary = '';\nfor (const [trade, lics] of Object.entries(byTrade)) {\n  tradeSummary += `${trade}: ${lics.length} active license(s)\\n`;\n}\n\nconst prompt = `You are a civic journalist writing for The Fulshear Report, a community newspaper covering Fulshear, Texas.\n\nWrite a news article summarizing recently active business licenses in Fulshear from the Texas Department of Licensing and Regulation (TDLR).\n\nABSOLUTE RULES:\n- Prose paragraphs ONLY. No bullets, dashes, numbered lists, or asterisks.\n- Group licenses by trade type into flowing paragraphs.\n- Every business name and trade type must appear inside a complete sentence.\n- Do not write \"not listed\" or \"unknown\" \u2014 omit any item without usable information.\n- Factual, local newspaper tone. 200\u2013300 words.\n- Output: article title on line 1 (no prefix), blank line, then article body.\n\nEXAMPLE OUTPUT:\nNew Businesses Register Across Skilled Trades in Fulshear\n\nA new batch of state-issued business licenses recorded this month through the Texas Department of Licensing and Regulation shows continued commercial activity in Fulshear. The registrations span several skilled trade categories, reflecting the growing demand for services in one of the region's fastest-expanding communities.\n\nThe cosmetology sector led the filings with four new active licenses, including salons and individual stylists establishing practices within the city. Electrical contractors accounted for three registrations, with licensed firms now authorized to serve both new residential construction and commercial retrofit projects.\n\nTwo HVAC businesses joined the local registry, as demand for climate-control installation continues to rise alongside the residential building boom in the county.\n\nLICENSE DATA:\n${tradeSummary}\nTotal active licenses: ${count}\nCity: Fulshear\nSource: TDLR \u2014 Texas Open Data Portal\n\nNow write the article:`;\n\nconst rawBody = JSON.stringify({\n  model: 'qwen2.5:3b',\n  prompt,\n  temperature: 0.3,\n  num_predict: 1200,\n  stream: false,\n});\n\nreturn [{json: {\n  rawBody,\n  cityName:   data.cityName,\n  siteUrl:    data.siteUrl,\n  wpUser:     data.wpUser,\n  wpAppPass:  data.wpAppPass,\n  categoryId: data.categoryId,\n}}];\n"
       },
-      "id": "2a9af845-e7bb-405b-9a35-c1571c09b3cf",
+      "id": "50f996fa-28b5-46a5-8226-5b80935f8739",
       "name": "Build Prompt",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -178,7 +178,7 @@
           "timeout": 120000
         }
       },
-      "id": "1d279b14-ed66-49b9-87c5-5896b21be884",
+      "id": "189aa240-d587-47b8-a488-3600fcaac086",
       "name": "Call Ollama",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -192,7 +192,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "\n// Extract title and body from Ollama JSON response\nconst raw = (items[0].json.response || '').trim();\n\nconst lines = raw.split('\\n');\n\n// First non-blank line = title\nlet titleIdx = 0;\nwhile (titleIdx < lines.length && lines[titleIdx].trim() === '') titleIdx++;\nlet title = lines[titleIdx].trim()\n  .replace(/^(title[:\\-\\s]*)/i, '')\n  .replace(/\\*+/g, '');\n\n// Skip blank separator line\nlet bodyStart = titleIdx + 1;\nwhile (bodyStart < lines.length && lines[bodyStart].trim() === '') bodyStart++;\nlet body = lines.slice(bodyStart).join('\\n').trim();\n\n// Fallback: if title looks like body prose (> 150 chars or empty)\nif (!title || title.length > 150) {\n  const firstSentence = (body || raw).replace(/\\n/g, ' ').split(/(?<=[.!?])\\s+/)[0];\n  title = firstSentence.slice(0, 90).trim();\n  if (!body) body = raw;\n}\n\n// Strip forbidden phrases from body\nconst forbidden = [\n  /valued as not reported/gi, /builder not listed/gi,\n  /not available/gi, /unknown builder/gi,\n];\nforbidden.forEach(re => { body = body.replace(re, ''); });\n\n// Pass config fields forward for WP publish\nconst cfg = $('Config').first().json;\nreturn [{json: {\n  title,\n  body,\n  cityName:   cfg.cityName,\n  siteUrl:    cfg.siteUrl,\n  wpUser:     cfg.wpUser,\n  wpAppPass:  cfg.wpAppPass,\n  categoryId: cfg.categoryId,\n}}];\n"
       },
-      "id": "63588aa9-a5c6-4a75-addd-34e741397fae",
+      "id": "643f396f-eae8-435d-a9e3-ae98e56bfedc",
       "name": "Parse Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -206,7 +206,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "\n// Query WP REST for recent posts in same category (25-day window)\nconst data = items[0].json;\nconst { siteUrl, wpUser, wpAppPass, categoryId } = data;\n\nconst cutoff = new Date();\ncutoff.setDate(cutoff.getDate() - 25);\n\nconst url = `${siteUrl}/wp-json/wp/v2/posts?categories=${categoryId}&after=${cutoff.toISOString()}&per_page=5&status=publish`;\nconst auth = 'Basic ' + Buffer.from(`${wpUser}:${wpAppPass}`).toString('base64');\n\nlet isDuplicate = false;\ntry {\n  const resp = await fetch(url, { headers: { 'Authorization': auth } });\n  const posts = await resp.json();\n  isDuplicate = Array.isArray(posts) && posts.length > 0;\n} catch (e) {\n  isDuplicate = false; // fail open\n}\n\nreturn [{json: {...data, isDuplicate}}];\n"
       },
-      "id": "a4c3440c-b0c3-4ac8-983e-dda22d22cc1b",
+      "id": "d64a9e0b-7d5f-488e-8246-05936329a04e",
       "name": "Check Duplicate",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -225,7 +225,7 @@
           },
           "conditions": [
             {
-              "id": "fd4f3776-fcbd-4c70-a661-988a168fc660",
+              "id": "8cd51694-b08c-469c-a7ff-0e96ff8e95d4",
               "leftValue": "={{ $json.isDuplicate }}",
               "rightValue": false,
               "operator": {
@@ -238,7 +238,7 @@
         },
         "options": {}
       },
-      "id": "9788f479-3e6f-4b7d-88a5-de83f3c08c3c",
+      "id": "e09bec53-1af8-42c5-a00a-57d396463e73",
       "name": "Is Duplicate?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
@@ -260,7 +260,7 @@
           "timeout": 30000
         }
       },
-      "id": "6d829c88-2b55-4950-b8d5-d8324fce485f",
+      "id": "6d5c573f-23a0-42f8-bd6e-4202e15af964",
       "name": "Publish to WordPress",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -379,14 +379,14 @@
     },
     "Is Duplicate?": {
       "main": [
-        [],
         [
           {
             "node": "Publish to WordPress",
             "type": "main",
             "index": 0
           }
-        ]
+        ],
+        []
       ]
     }
   },
@@ -394,6 +394,6 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "id": "6471367d-0552-4157-9f5e-3a7426ffc626",
+  "id": "62d62553-0b44-49a4-a89a-0d630594ed60",
   "tags": []
 }

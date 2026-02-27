@@ -12,7 +12,7 @@
           ]
         }
       },
-      "id": "b1fff382-3ff0-4b48-903b-91f1bb54efce",
+      "id": "10080570-a9fb-4c76-8181-207f495e399d",
       "name": "Schedule Trigger",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
@@ -28,43 +28,43 @@
         "assignments": {
           "assignments": [
             {
-              "id": "08d9ec61-9c94-49ee-90d6-aa3a3055cec3",
+              "id": "334209cd-c0a5-40e3-9847-db8dc572b60a",
               "name": "cityName",
               "value": "Celina",
               "type": "string"
             },
             {
-              "id": "bbe1c207-93f5-4c68-9f61-442db1089885",
+              "id": "9b63550a-7065-45df-b6ba-98cfd8e2426a",
               "name": "publication",
               "value": "The Celina Report",
               "type": "string"
             },
             {
-              "id": "a27cab04-0399-4366-b37e-44051171582e",
+              "id": "ff25a5b8-df04-4e85-8cc3-6211e174cab0",
               "name": "siteUrl",
               "value": "https://celinareport.com",
               "type": "string"
             },
             {
-              "id": "80d868d4-945c-4cf9-bd3f-188fe51de756",
+              "id": "f7b66944-7715-49d3-8061-160a0dcf248c",
               "name": "wpUser",
               "value": "admin",
               "type": "string"
             },
             {
-              "id": "6a27a5a3-156e-454d-b69b-c5096b647e07",
+              "id": "97959e36-d393-427c-9131-22a63f303a4a",
               "name": "wpAppPass",
               "value": "REPLACE_WITH_APP_PASS_CELINA",
               "type": "string"
             },
             {
-              "id": "dc9a9df6-f423-496a-b321-707a5f6a0f37",
+              "id": "36854ae0-36d6-4f38-a5ab-bd7852a4159b",
               "name": "categoryId",
               "value": 3,
               "type": "number"
             },
             {
-              "id": "0beecb19-fd45-4f77-8b0f-ceee5938f519",
+              "id": "3260b33a-75d1-40d4-a42d-92fc508d0775",
               "name": "scraperCity",
               "value": "celina",
               "type": "string"
@@ -73,7 +73,7 @@
         },
         "options": {}
       },
-      "id": "b010b930-cc29-4345-9d6c-732d07601fe5",
+      "id": "b8a46702-f2d8-4aab-9bdb-cb3b90b8664a",
       "name": "Config",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
@@ -87,7 +87,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "\n// Call the local Playwright scraper (txnews-scraper:5001)\nconst cfg = $('Config').first().json;\n\nlet result;\ntry {\n  const resp = await fetch('http://txnews-scraper:5001/scrape', {\n    method: 'POST',\n    headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify({ city: cfg.scraperCity }),\n  });\n  result = await resp.json();\n} catch (e) {\n  return [{json: {hasData: false, error: e.message, cityName: cfg.cityName}}];\n}\n\nif (!result.success || !result.agenda_text) {\n  return [{json: {\n    hasData:  false,\n    error:    result.error || 'No agenda text returned',\n    cityName: cfg.cityName,\n  }}];\n}\n\nreturn [{json: {\n  hasData:      true,\n  meetingTitle: result.meeting_title,\n  meetingDate:  result.meeting_date,\n  meetingType:  result.meeting_type,\n  agendaText:   result.agenda_text,\n  cityName:     cfg.cityName,\n  siteUrl:      cfg.siteUrl,\n  wpUser:       cfg.wpUser,\n  wpAppPass:    cfg.wpAppPass,\n  categoryId:   cfg.categoryId,\n}}];\n"
       },
-      "id": "ac71f204-8f29-4d2c-8f80-fff8f1780207",
+      "id": "d96e2026-0593-42d3-9a93-f0d6946ae132",
       "name": "Fetch Agenda",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -106,7 +106,7 @@
           },
           "conditions": [
             {
-              "id": "fee2de63-6709-4a10-b08e-14aa1a4077c5",
+              "id": "9b351271-8707-4be5-b119-dc167ddd9f9a",
               "leftValue": "={{ $json.hasData }}",
               "rightValue": true,
               "operator": {
@@ -119,7 +119,7 @@
         },
         "options": {}
       },
-      "id": "d90f2e67-f8d7-4f58-a96e-69a91d0efa11",
+      "id": "7f21697c-420b-4da1-8eac-c013c9dd4116",
       "name": "Has Agenda?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
@@ -131,9 +131,9 @@
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "\nconst data = items[0].json;\nconst { meetingTitle, meetingDate, meetingType, agendaText, cityName } = data;\n\nconst prompt = `You are a civic journalist writing for The Celina Report, a community newspaper covering Celina, Texas.\n\nWrite a news article previewing an upcoming ${meetingType || 'city council'} meeting based on the agenda text below.\n\nABSOLUTE RULES:\n- Prose paragraphs ONLY. No bullets, dashes, numbered lists, or asterisks.\n- Summarize key agenda items in plain English for a general audience.\n- Include the meeting date, body name, and key action items in complete sentences.\n- Do not reproduce the agenda verbatim \u2014 synthesize and explain what each item means for residents.\n- 200\u2013350 words. Factual local newspaper tone.\n- Output: article title on line 1 (no prefix), blank line, then article body.\n\nEXAMPLE OUTPUT:\nCelina City Council to Consider Rezoning Request and Road Bond at March 3 Meeting\n\nThe Celina City Council will convene Monday, March 3, for its regular monthly meeting, where members are expected to take up a rezoning request from a residential developer along the city's northern growth corridor and consider authorizing a bond package for road improvements near the new elementary school campus.\n\nThe rezoning item seeks to reclassify approximately 47 acres from agricultural to planned development to accommodate a 180-unit townhome community. The project has previously received a favorable recommendation from the Planning and Zoning Commission, clearing the way for a council vote.\n\nAlso on the agenda is a resolution to call a May bond election, which would ask voters to approve up to $18 million in general obligation bonds to fund the extension of a county road and intersection upgrades at two high-priority safety locations.\n\nThe council is also set to hear a presentation from the city manager on infrastructure needs associated with ongoing residential expansion and to approve routine consent items. The meeting begins at 6:30 p.m. at Celina City Hall.\n\nMEETING INFORMATION:\nTitle: ${meetingTitle}\nDate: ${meetingDate}\nType: ${meetingType}\n\nAGENDA TEXT (from official PDF):\n${agendaText.slice(0, 6000)}\n\nNow write the article:`;\n\nconst rawBody = JSON.stringify({\n  model: 'qwen2.5:3b',\n  prompt,\n  temperature: 0.3,\n  num_predict: 1500,\n  stream: false,\n});\n\nreturn [{json: {\n  rawBody,\n  cityName:   data.cityName,\n  siteUrl:    data.siteUrl,\n  wpUser:     data.wpUser,\n  wpAppPass:  data.wpAppPass,\n  categoryId: data.categoryId,\n}}];\n"
+        "jsCode": "\nconst data = items[0].json;\nconst { meetingTitle, meetingDate, meetingType, agendaText, cityName } = data;\n\nconst prompt = `You are a civic journalist writing for The Celina Report, a community newspaper covering Celina, Texas.\n\nWrite a news article previewing an upcoming ${meetingType || 'city council'} meeting based on the agenda text below.\n\nABSOLUTE RULES:\n- Prose paragraphs ONLY. No bullets, dashes, numbered lists, or asterisks.\n- Summarize key agenda items in plain English for a general audience.\n- Include the meeting date, body name, and key action items in complete sentences.\n- Do not reproduce the agenda verbatim \u2014 synthesize and explain what each item means for residents.\n- 200\u2013350 words. Factual local newspaper tone.\n- Output: article title on line 1 (no prefix), blank line, then article body.\n\nEXAMPLE OUTPUT:\nCelina City Council to Consider Rezoning Request and Road Bond at March 3 Meeting\n\nThe Celina City Council will convene Monday, March 3, for its regular monthly meeting, where members are expected to take up a rezoning request from a residential developer along the city's northern growth corridor and consider authorizing a bond package for road improvements near the new elementary school campus.\n\nThe rezoning item seeks to reclassify approximately 47 acres from agricultural to planned development to accommodate a 180-unit townhome community. The project has previously received a favorable recommendation from the Planning and Zoning Commission, clearing the way for a council vote.\n\nAlso on the agenda is a resolution to call a May bond election, which would ask voters to approve up to $18 million in general obligation bonds to fund the extension of a county road and intersection upgrades at two high-priority safety locations.\n\nThe council is also set to hear a presentation from the city manager on infrastructure needs associated with ongoing residential expansion and to approve routine consent items. The meeting begins at 6:30 p.m. at Celina City Hall.\n\nMEETING INFORMATION:\nTitle: ${meetingTitle}\nDate: ${meetingDate}\nType: ${meetingType}\n\nAGENDA TEXT (from official PDF):\n${(agendaText || '').slice(0, 6000)}\n\nNow write the article:`;\n\nconst rawBody = JSON.stringify({\n  model: 'qwen2.5:3b',\n  prompt,\n  temperature: 0.3,\n  num_predict: 1500,\n  stream: false,\n});\n\nreturn [{json: {\n  rawBody,\n  cityName:   data.cityName,\n  siteUrl:    data.siteUrl,\n  wpUser:     data.wpUser,\n  wpAppPass:  data.wpAppPass,\n  categoryId: data.categoryId,\n}}];\n"
       },
-      "id": "486ac2ca-287f-4007-a6bd-52277025065a",
+      "id": "a2ead10a-14e1-49f4-ab56-5cc03f95f277",
       "name": "Build Prompt",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -154,7 +154,7 @@
           "timeout": 120000
         }
       },
-      "id": "93c641af-79d0-409e-945e-b2c20c84e8e8",
+      "id": "4afe52fa-acd7-4656-9455-6bb96377d576",
       "name": "Call Ollama",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -168,7 +168,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "\n// Extract title and body from Ollama JSON response\nconst raw = (items[0].json.response || '').trim();\n\nconst lines = raw.split('\\n');\n\n// First non-blank line = title\nlet titleIdx = 0;\nwhile (titleIdx < lines.length && lines[titleIdx].trim() === '') titleIdx++;\nlet title = lines[titleIdx].trim()\n  .replace(/^(title[:\\-\\s]*)/i, '')\n  .replace(/\\*+/g, '');\n\n// Skip blank separator line\nlet bodyStart = titleIdx + 1;\nwhile (bodyStart < lines.length && lines[bodyStart].trim() === '') bodyStart++;\nlet body = lines.slice(bodyStart).join('\\n').trim();\n\n// Fallback: if title looks like body prose (> 150 chars or empty)\nif (!title || title.length > 150) {\n  const firstSentence = (body || raw).replace(/\\n/g, ' ').split(/(?<=[.!?])\\s+/)[0];\n  title = firstSentence.slice(0, 90).trim();\n  if (!body) body = raw;\n}\n\n// Strip forbidden phrases from body\nconst forbidden = [\n  /valued as not reported/gi, /builder not listed/gi,\n  /not available/gi, /unknown builder/gi,\n];\nforbidden.forEach(re => { body = body.replace(re, ''); });\n\n// Pass config fields forward for WP publish\nconst cfg = $('Config').first().json;\nreturn [{json: {\n  title,\n  body,\n  cityName:   cfg.cityName,\n  siteUrl:    cfg.siteUrl,\n  wpUser:     cfg.wpUser,\n  wpAppPass:  cfg.wpAppPass,\n  categoryId: cfg.categoryId,\n}}];\n"
       },
-      "id": "b4bc8f27-35a0-4e59-80bb-4d41854dc540",
+      "id": "60566cf3-25b5-4e9c-a494-f71f9931dfa3",
       "name": "Parse Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -182,7 +182,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "\n// Query WP REST for recent posts in same category (3-day window)\nconst data = items[0].json;\nconst { siteUrl, wpUser, wpAppPass, categoryId } = data;\n\nconst cutoff = new Date();\ncutoff.setDate(cutoff.getDate() - 3);\n\nconst url = `${siteUrl}/wp-json/wp/v2/posts?categories=${categoryId}&after=${cutoff.toISOString()}&per_page=5&status=publish`;\nconst auth = 'Basic ' + Buffer.from(`${wpUser}:${wpAppPass}`).toString('base64');\n\nlet isDuplicate = false;\ntry {\n  const resp = await fetch(url, { headers: { 'Authorization': auth } });\n  const posts = await resp.json();\n  isDuplicate = Array.isArray(posts) && posts.length > 0;\n} catch (e) {\n  isDuplicate = false; // fail open\n}\n\nreturn [{json: {...data, isDuplicate}}];\n"
       },
-      "id": "479e7355-8788-465b-b93a-d50cc608abae",
+      "id": "a085287e-2e77-43db-8fac-06c69a6fa5c1",
       "name": "Check Duplicate",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -201,7 +201,7 @@
           },
           "conditions": [
             {
-              "id": "e97ada3c-a361-49fd-b6c6-1be04f056573",
+              "id": "eafcbd17-4818-4363-875b-4eb8c590ebdd",
               "leftValue": "={{ $json.isDuplicate }}",
               "rightValue": false,
               "operator": {
@@ -214,7 +214,7 @@
         },
         "options": {}
       },
-      "id": "a19e6076-6fcb-4b91-891e-c0f16bb4242b",
+      "id": "47162b26-014d-4a5b-9f50-d8b9585f8bcd",
       "name": "Is Duplicate?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
@@ -236,7 +236,7 @@
           "timeout": 30000
         }
       },
-      "id": "9d83b0cf-6a40-4583-87b4-6a57444494ce",
+      "id": "fb99f1e2-a02b-4966-acc9-06252a61f92f",
       "name": "Publish to WordPress",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -344,14 +344,14 @@
     },
     "Is Duplicate?": {
       "main": [
-        [],
         [
           {
             "node": "Publish to WordPress",
             "type": "main",
             "index": 0
           }
-        ]
+        ],
+        []
       ]
     }
   },
@@ -359,6 +359,6 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "id": "ebe7a4a4-4285-4e30-baae-f7cbc8d20347",
+  "id": "276940ab-7a49-4a29-a40a-82b5ba1550e9",
   "tags": []
 }

@@ -12,7 +12,7 @@
           ]
         }
       },
-      "id": "16b89777-b74a-4e71-9cd4-5e1304123581",
+      "id": "b0f55c52-a853-4844-8fa4-8a51e02ea5cd",
       "name": "Schedule Trigger",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
@@ -28,43 +28,43 @@
         "assignments": {
           "assignments": [
             {
-              "id": "429af6f3-6727-4a09-8139-43b9e8891485",
+              "id": "834b9115-869a-4ef2-96f8-39af76af3778",
               "name": "cityName",
               "value": "Fulshear",
               "type": "string"
             },
             {
-              "id": "051107d6-6775-4189-8f2f-ed0bc0362b60",
+              "id": "ffad2fdc-ea41-4bc8-ab07-937133a7c859",
               "name": "publication",
               "value": "The Fulshear Report",
               "type": "string"
             },
             {
-              "id": "18d3d9e1-7f44-4f06-8665-a66b24cd00a1",
+              "id": "e44997c5-ac3d-49cc-8fa8-f681c75d4cdb",
               "name": "siteUrl",
               "value": "https://thefulshearreport.com",
               "type": "string"
             },
             {
-              "id": "bc1d29ac-cf7f-4e53-8250-c4da2a73dea0",
+              "id": "e00f542f-836e-420e-8b09-4d469f9ebb96",
               "name": "wpUser",
               "value": "admin",
               "type": "string"
             },
             {
-              "id": "b210165d-3c5f-4bec-888a-762e94f2f049",
+              "id": "571af935-dacd-458a-bb03-becc86164c29",
               "name": "wpAppPass",
               "value": "REPLACE_WITH_APP_PASS_FULSHEAR",
               "type": "string"
             },
             {
-              "id": "768ad7c4-f279-44d9-afc0-84fa5206f9fb",
+              "id": "0fbf0ecf-e26e-4fde-95a2-9995b39ade59",
               "name": "categoryId",
               "value": 3,
               "type": "number"
             },
             {
-              "id": "77a7719f-885e-4856-ab61-90d1e6e27043",
+              "id": "a8cca017-1f3d-4021-a4a2-45214e00dde4",
               "name": "scraperCity",
               "value": "fulshear",
               "type": "string"
@@ -73,7 +73,7 @@
         },
         "options": {}
       },
-      "id": "dd68dfd2-cd79-468e-bcef-a69589d4396f",
+      "id": "3fa9e0ab-8434-4a90-9018-8464df185a19",
       "name": "Config",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
@@ -87,7 +87,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "\n// Call the local Playwright scraper (txnews-scraper:5001)\nconst cfg = $('Config').first().json;\n\nlet result;\ntry {\n  const resp = await fetch('http://txnews-scraper:5001/scrape', {\n    method: 'POST',\n    headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify({ city: cfg.scraperCity }),\n  });\n  result = await resp.json();\n} catch (e) {\n  return [{json: {hasData: false, error: e.message, cityName: cfg.cityName}}];\n}\n\nif (!result.success || !result.agenda_text) {\n  return [{json: {\n    hasData:  false,\n    error:    result.error || 'No agenda text returned',\n    cityName: cfg.cityName,\n  }}];\n}\n\nreturn [{json: {\n  hasData:      true,\n  meetingTitle: result.meeting_title,\n  meetingDate:  result.meeting_date,\n  meetingType:  result.meeting_type,\n  agendaText:   result.agenda_text,\n  cityName:     cfg.cityName,\n  siteUrl:      cfg.siteUrl,\n  wpUser:       cfg.wpUser,\n  wpAppPass:    cfg.wpAppPass,\n  categoryId:   cfg.categoryId,\n}}];\n"
       },
-      "id": "056f5c59-80d3-4b17-8529-bd170e0f3601",
+      "id": "868582cd-b45f-4da0-9709-561b7bfd9587",
       "name": "Fetch Agenda",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -106,7 +106,7 @@
           },
           "conditions": [
             {
-              "id": "73b85ecb-b126-4311-8670-6212fcea8b76",
+              "id": "b9810584-da03-4805-851d-1de425774397",
               "leftValue": "={{ $json.hasData }}",
               "rightValue": true,
               "operator": {
@@ -119,7 +119,7 @@
         },
         "options": {}
       },
-      "id": "4c339c2e-229a-4376-a81f-04200c187aae",
+      "id": "9718d0a9-0ffd-4d94-afd8-6374d2558aef",
       "name": "Has Agenda?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
@@ -131,9 +131,9 @@
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "\nconst data = items[0].json;\nconst { meetingTitle, meetingDate, meetingType, agendaText, cityName } = data;\n\nconst prompt = `You are a civic journalist writing for The Fulshear Report, a community newspaper covering Fulshear, Texas.\n\nWrite a news article previewing an upcoming ${meetingType || 'city council'} meeting based on the agenda text below.\n\nABSOLUTE RULES:\n- Prose paragraphs ONLY. No bullets, dashes, numbered lists, or asterisks.\n- Summarize key agenda items in plain English for a general audience.\n- Include the meeting date, body name, and key action items in complete sentences.\n- Do not reproduce the agenda verbatim \u2014 synthesize and explain what each item means for residents.\n- 200\u2013350 words. Factual local newspaper tone.\n- Output: article title on line 1 (no prefix), blank line, then article body.\n\nEXAMPLE OUTPUT:\nFulshear City Council to Consider Rezoning Request and Road Bond at March 3 Meeting\n\nThe Fulshear City Council will convene Monday, March 3, for its regular monthly meeting, where members are expected to take up a rezoning request from a residential developer along the city's northern growth corridor and consider authorizing a bond package for road improvements near the new elementary school campus.\n\nThe rezoning item seeks to reclassify approximately 47 acres from agricultural to planned development to accommodate a 180-unit townhome community. The project has previously received a favorable recommendation from the Planning and Zoning Commission, clearing the way for a council vote.\n\nAlso on the agenda is a resolution to call a May bond election, which would ask voters to approve up to $18 million in general obligation bonds to fund the extension of a county road and intersection upgrades at two high-priority safety locations.\n\nThe council is also set to hear a presentation from the city manager on infrastructure needs associated with ongoing residential expansion and to approve routine consent items. The meeting begins at 6:30 p.m. at Fulshear City Hall.\n\nMEETING INFORMATION:\nTitle: ${meetingTitle}\nDate: ${meetingDate}\nType: ${meetingType}\n\nAGENDA TEXT (from official PDF):\n${agendaText.slice(0, 6000)}\n\nNow write the article:`;\n\nconst rawBody = JSON.stringify({\n  model: 'qwen2.5:3b',\n  prompt,\n  temperature: 0.3,\n  num_predict: 1500,\n  stream: false,\n});\n\nreturn [{json: {\n  rawBody,\n  cityName:   data.cityName,\n  siteUrl:    data.siteUrl,\n  wpUser:     data.wpUser,\n  wpAppPass:  data.wpAppPass,\n  categoryId: data.categoryId,\n}}];\n"
+        "jsCode": "\nconst data = items[0].json;\nconst { meetingTitle, meetingDate, meetingType, agendaText, cityName } = data;\n\nconst prompt = `You are a civic journalist writing for The Fulshear Report, a community newspaper covering Fulshear, Texas.\n\nWrite a news article previewing an upcoming ${meetingType || 'city council'} meeting based on the agenda text below.\n\nABSOLUTE RULES:\n- Prose paragraphs ONLY. No bullets, dashes, numbered lists, or asterisks.\n- Summarize key agenda items in plain English for a general audience.\n- Include the meeting date, body name, and key action items in complete sentences.\n- Do not reproduce the agenda verbatim \u2014 synthesize and explain what each item means for residents.\n- 200\u2013350 words. Factual local newspaper tone.\n- Output: article title on line 1 (no prefix), blank line, then article body.\n\nEXAMPLE OUTPUT:\nFulshear City Council to Consider Rezoning Request and Road Bond at March 3 Meeting\n\nThe Fulshear City Council will convene Monday, March 3, for its regular monthly meeting, where members are expected to take up a rezoning request from a residential developer along the city's northern growth corridor and consider authorizing a bond package for road improvements near the new elementary school campus.\n\nThe rezoning item seeks to reclassify approximately 47 acres from agricultural to planned development to accommodate a 180-unit townhome community. The project has previously received a favorable recommendation from the Planning and Zoning Commission, clearing the way for a council vote.\n\nAlso on the agenda is a resolution to call a May bond election, which would ask voters to approve up to $18 million in general obligation bonds to fund the extension of a county road and intersection upgrades at two high-priority safety locations.\n\nThe council is also set to hear a presentation from the city manager on infrastructure needs associated with ongoing residential expansion and to approve routine consent items. The meeting begins at 6:30 p.m. at Fulshear City Hall.\n\nMEETING INFORMATION:\nTitle: ${meetingTitle}\nDate: ${meetingDate}\nType: ${meetingType}\n\nAGENDA TEXT (from official PDF):\n${(agendaText || '').slice(0, 6000)}\n\nNow write the article:`;\n\nconst rawBody = JSON.stringify({\n  model: 'qwen2.5:3b',\n  prompt,\n  temperature: 0.3,\n  num_predict: 1500,\n  stream: false,\n});\n\nreturn [{json: {\n  rawBody,\n  cityName:   data.cityName,\n  siteUrl:    data.siteUrl,\n  wpUser:     data.wpUser,\n  wpAppPass:  data.wpAppPass,\n  categoryId: data.categoryId,\n}}];\n"
       },
-      "id": "93746a90-f20d-4969-a3b5-e00f9e31c1c1",
+      "id": "733f026d-66fb-43cb-a4bb-017f43bb3005",
       "name": "Build Prompt",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -154,7 +154,7 @@
           "timeout": 120000
         }
       },
-      "id": "67011875-f24c-48e9-8e59-96c9f5a54eba",
+      "id": "c3bec0d9-4f10-4217-b65e-69a88985b752",
       "name": "Call Ollama",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -168,7 +168,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "\n// Extract title and body from Ollama JSON response\nconst raw = (items[0].json.response || '').trim();\n\nconst lines = raw.split('\\n');\n\n// First non-blank line = title\nlet titleIdx = 0;\nwhile (titleIdx < lines.length && lines[titleIdx].trim() === '') titleIdx++;\nlet title = lines[titleIdx].trim()\n  .replace(/^(title[:\\-\\s]*)/i, '')\n  .replace(/\\*+/g, '');\n\n// Skip blank separator line\nlet bodyStart = titleIdx + 1;\nwhile (bodyStart < lines.length && lines[bodyStart].trim() === '') bodyStart++;\nlet body = lines.slice(bodyStart).join('\\n').trim();\n\n// Fallback: if title looks like body prose (> 150 chars or empty)\nif (!title || title.length > 150) {\n  const firstSentence = (body || raw).replace(/\\n/g, ' ').split(/(?<=[.!?])\\s+/)[0];\n  title = firstSentence.slice(0, 90).trim();\n  if (!body) body = raw;\n}\n\n// Strip forbidden phrases from body\nconst forbidden = [\n  /valued as not reported/gi, /builder not listed/gi,\n  /not available/gi, /unknown builder/gi,\n];\nforbidden.forEach(re => { body = body.replace(re, ''); });\n\n// Pass config fields forward for WP publish\nconst cfg = $('Config').first().json;\nreturn [{json: {\n  title,\n  body,\n  cityName:   cfg.cityName,\n  siteUrl:    cfg.siteUrl,\n  wpUser:     cfg.wpUser,\n  wpAppPass:  cfg.wpAppPass,\n  categoryId: cfg.categoryId,\n}}];\n"
       },
-      "id": "12e4d15f-8a9f-4050-954f-1cefb65ec953",
+      "id": "2d26083f-67ce-4a4d-9f79-127377d3147e",
       "name": "Parse Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -182,7 +182,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "\n// Query WP REST for recent posts in same category (3-day window)\nconst data = items[0].json;\nconst { siteUrl, wpUser, wpAppPass, categoryId } = data;\n\nconst cutoff = new Date();\ncutoff.setDate(cutoff.getDate() - 3);\n\nconst url = `${siteUrl}/wp-json/wp/v2/posts?categories=${categoryId}&after=${cutoff.toISOString()}&per_page=5&status=publish`;\nconst auth = 'Basic ' + Buffer.from(`${wpUser}:${wpAppPass}`).toString('base64');\n\nlet isDuplicate = false;\ntry {\n  const resp = await fetch(url, { headers: { 'Authorization': auth } });\n  const posts = await resp.json();\n  isDuplicate = Array.isArray(posts) && posts.length > 0;\n} catch (e) {\n  isDuplicate = false; // fail open\n}\n\nreturn [{json: {...data, isDuplicate}}];\n"
       },
-      "id": "bb36ffa8-60d5-441a-879f-9eaa41949a72",
+      "id": "3dae3b10-9427-46a3-9f1f-f0891e06b9d0",
       "name": "Check Duplicate",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -201,7 +201,7 @@
           },
           "conditions": [
             {
-              "id": "c721a992-85fd-4c21-bda3-60581168e1dc",
+              "id": "c47a9501-8fdb-4149-b0aa-f5112470c33e",
               "leftValue": "={{ $json.isDuplicate }}",
               "rightValue": false,
               "operator": {
@@ -214,7 +214,7 @@
         },
         "options": {}
       },
-      "id": "27ba5160-ec5f-4c88-9ad1-45a90ac3dc9e",
+      "id": "df9fe7c7-a104-4932-b8aa-316eaad21572",
       "name": "Is Duplicate?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
@@ -236,7 +236,7 @@
           "timeout": 30000
         }
       },
-      "id": "08db0a08-04d5-48c2-b476-80a61460282e",
+      "id": "f713cd4e-6ad7-4ed9-8049-e9380f4f833f",
       "name": "Publish to WordPress",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -344,14 +344,14 @@
     },
     "Is Duplicate?": {
       "main": [
-        [],
         [
           {
             "node": "Publish to WordPress",
             "type": "main",
             "index": 0
           }
-        ]
+        ],
+        []
       ]
     }
   },
@@ -359,6 +359,6 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "id": "dd2087c3-be13-45c6-b8ad-241e57526577",
+  "id": "0eccebe4-b102-43b7-97af-6a8c868dede6",
   "tags": []
 }

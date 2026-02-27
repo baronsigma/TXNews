@@ -12,7 +12,7 @@
           ]
         }
       },
-      "id": "21033dd7-baea-4199-93f0-5b72afbf589d",
+      "id": "3f44fd6f-0cd9-48db-afd7-c63facc0432e",
       "name": "Schedule Trigger",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
@@ -28,43 +28,43 @@
         "assignments": {
           "assignments": [
             {
-              "id": "ae0b9fbd-c4e3-49f0-8e87-79d3502cc2d1",
+              "id": "e3f9dd0e-6041-4b63-acd0-952d4093bb68",
               "name": "cityName",
               "value": "Princeton",
               "type": "string"
             },
             {
-              "id": "bce4c372-1151-4b1e-b3a3-61c3afbc7909",
+              "id": "c7bf3dbb-5d03-409f-91e5-c912ec032f12",
               "name": "publication",
               "value": "Princeton TX News",
               "type": "string"
             },
             {
-              "id": "004b876a-f59f-4052-bfaf-a0205683ba4d",
+              "id": "9f0a5528-8689-4729-8e54-b5162b51f86a",
               "name": "siteUrl",
               "value": "https://princetontxnews.com",
               "type": "string"
             },
             {
-              "id": "63bffba9-7248-44ce-9a40-9a15a2ef6938",
+              "id": "f956ce93-1df9-4fab-a0da-155146314b8d",
               "name": "wpUser",
               "value": "admin",
               "type": "string"
             },
             {
-              "id": "1235fe64-18dc-443a-9af6-86dc274dbaf1",
+              "id": "b5ed447c-102e-403a-a2e7-1b9c8ebef485",
               "name": "wpAppPass",
               "value": "REPLACE_WITH_APP_PASS_PRINCETON",
               "type": "string"
             },
             {
-              "id": "ee68e3af-f29c-4219-9e88-7d143dd79fc9",
+              "id": "8fc4dd51-892d-42d1-991e-d075311ec9b9",
               "name": "categoryId",
               "value": 3,
               "type": "number"
             },
             {
-              "id": "74c5c4a5-2b81-42da-af89-bb73207cde25",
+              "id": "d74a5a9d-3d64-40bd-ad68-7c11da66ce35",
               "name": "scraperCity",
               "value": "princeton",
               "type": "string"
@@ -73,7 +73,7 @@
         },
         "options": {}
       },
-      "id": "be56c08f-ba9a-4d51-a2e6-5fd43b984bfa",
+      "id": "1141a94f-ada1-4896-bc4c-e424f8c36e1d",
       "name": "Config",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
@@ -87,7 +87,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "\n// Call the local Playwright scraper (txnews-scraper:5001)\nconst cfg = $('Config').first().json;\n\nlet result;\ntry {\n  const resp = await fetch('http://txnews-scraper:5001/scrape', {\n    method: 'POST',\n    headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify({ city: cfg.scraperCity }),\n  });\n  result = await resp.json();\n} catch (e) {\n  return [{json: {hasData: false, error: e.message, cityName: cfg.cityName}}];\n}\n\nif (!result.success || !result.agenda_text) {\n  return [{json: {\n    hasData:  false,\n    error:    result.error || 'No agenda text returned',\n    cityName: cfg.cityName,\n  }}];\n}\n\nreturn [{json: {\n  hasData:      true,\n  meetingTitle: result.meeting_title,\n  meetingDate:  result.meeting_date,\n  meetingType:  result.meeting_type,\n  agendaText:   result.agenda_text,\n  cityName:     cfg.cityName,\n  siteUrl:      cfg.siteUrl,\n  wpUser:       cfg.wpUser,\n  wpAppPass:    cfg.wpAppPass,\n  categoryId:   cfg.categoryId,\n}}];\n"
       },
-      "id": "4d6c6c20-d245-4a4d-886a-d86f27ba3f7c",
+      "id": "b7794e6d-d24a-4710-9680-f5ab9f086e7c",
       "name": "Fetch Agenda",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -106,7 +106,7 @@
           },
           "conditions": [
             {
-              "id": "b2c9ee53-ce71-41aa-9759-f049672f317b",
+              "id": "5c952572-ee18-4fa3-bd39-e82248afa50d",
               "leftValue": "={{ $json.hasData }}",
               "rightValue": true,
               "operator": {
@@ -119,7 +119,7 @@
         },
         "options": {}
       },
-      "id": "2d11363a-3d1f-4095-9143-a96ea9cc8bf4",
+      "id": "d31a3239-9f40-4203-8080-e014475eaf39",
       "name": "Has Agenda?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
@@ -131,9 +131,9 @@
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "\nconst data = items[0].json;\nconst { meetingTitle, meetingDate, meetingType, agendaText, cityName } = data;\n\nconst prompt = `You are a civic journalist writing for Princeton TX News, a community newspaper covering Princeton, Texas.\n\nWrite a news article previewing an upcoming ${meetingType || 'city council'} meeting based on the agenda text below.\n\nABSOLUTE RULES:\n- Prose paragraphs ONLY. No bullets, dashes, numbered lists, or asterisks.\n- Summarize key agenda items in plain English for a general audience.\n- Include the meeting date, body name, and key action items in complete sentences.\n- Do not reproduce the agenda verbatim \u2014 synthesize and explain what each item means for residents.\n- 200\u2013350 words. Factual local newspaper tone.\n- Output: article title on line 1 (no prefix), blank line, then article body.\n\nEXAMPLE OUTPUT:\nPrinceton City Council to Consider Rezoning Request and Road Bond at March 3 Meeting\n\nThe Princeton City Council will convene Monday, March 3, for its regular monthly meeting, where members are expected to take up a rezoning request from a residential developer along the city's northern growth corridor and consider authorizing a bond package for road improvements near the new elementary school campus.\n\nThe rezoning item seeks to reclassify approximately 47 acres from agricultural to planned development to accommodate a 180-unit townhome community. The project has previously received a favorable recommendation from the Planning and Zoning Commission, clearing the way for a council vote.\n\nAlso on the agenda is a resolution to call a May bond election, which would ask voters to approve up to $18 million in general obligation bonds to fund the extension of a county road and intersection upgrades at two high-priority safety locations.\n\nThe council is also set to hear a presentation from the city manager on infrastructure needs associated with ongoing residential expansion and to approve routine consent items. The meeting begins at 6:30 p.m. at Princeton City Hall.\n\nMEETING INFORMATION:\nTitle: ${meetingTitle}\nDate: ${meetingDate}\nType: ${meetingType}\n\nAGENDA TEXT (from official PDF):\n${agendaText.slice(0, 6000)}\n\nNow write the article:`;\n\nconst rawBody = JSON.stringify({\n  model: 'qwen2.5:3b',\n  prompt,\n  temperature: 0.3,\n  num_predict: 1500,\n  stream: false,\n});\n\nreturn [{json: {\n  rawBody,\n  cityName:   data.cityName,\n  siteUrl:    data.siteUrl,\n  wpUser:     data.wpUser,\n  wpAppPass:  data.wpAppPass,\n  categoryId: data.categoryId,\n}}];\n"
+        "jsCode": "\nconst data = items[0].json;\nconst { meetingTitle, meetingDate, meetingType, agendaText, cityName } = data;\n\nconst prompt = `You are a civic journalist writing for Princeton TX News, a community newspaper covering Princeton, Texas.\n\nWrite a news article previewing an upcoming ${meetingType || 'city council'} meeting based on the agenda text below.\n\nABSOLUTE RULES:\n- Prose paragraphs ONLY. No bullets, dashes, numbered lists, or asterisks.\n- Summarize key agenda items in plain English for a general audience.\n- Include the meeting date, body name, and key action items in complete sentences.\n- Do not reproduce the agenda verbatim \u2014 synthesize and explain what each item means for residents.\n- 200\u2013350 words. Factual local newspaper tone.\n- Output: article title on line 1 (no prefix), blank line, then article body.\n\nEXAMPLE OUTPUT:\nPrinceton City Council to Consider Rezoning Request and Road Bond at March 3 Meeting\n\nThe Princeton City Council will convene Monday, March 3, for its regular monthly meeting, where members are expected to take up a rezoning request from a residential developer along the city's northern growth corridor and consider authorizing a bond package for road improvements near the new elementary school campus.\n\nThe rezoning item seeks to reclassify approximately 47 acres from agricultural to planned development to accommodate a 180-unit townhome community. The project has previously received a favorable recommendation from the Planning and Zoning Commission, clearing the way for a council vote.\n\nAlso on the agenda is a resolution to call a May bond election, which would ask voters to approve up to $18 million in general obligation bonds to fund the extension of a county road and intersection upgrades at two high-priority safety locations.\n\nThe council is also set to hear a presentation from the city manager on infrastructure needs associated with ongoing residential expansion and to approve routine consent items. The meeting begins at 6:30 p.m. at Princeton City Hall.\n\nMEETING INFORMATION:\nTitle: ${meetingTitle}\nDate: ${meetingDate}\nType: ${meetingType}\n\nAGENDA TEXT (from official PDF):\n${(agendaText || '').slice(0, 6000)}\n\nNow write the article:`;\n\nconst rawBody = JSON.stringify({\n  model: 'qwen2.5:3b',\n  prompt,\n  temperature: 0.3,\n  num_predict: 1500,\n  stream: false,\n});\n\nreturn [{json: {\n  rawBody,\n  cityName:   data.cityName,\n  siteUrl:    data.siteUrl,\n  wpUser:     data.wpUser,\n  wpAppPass:  data.wpAppPass,\n  categoryId: data.categoryId,\n}}];\n"
       },
-      "id": "75d2011c-c2b8-483e-a896-96c8fcff61fa",
+      "id": "86cf2ead-6c95-497d-a96a-e6dd0232fa04",
       "name": "Build Prompt",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -154,7 +154,7 @@
           "timeout": 120000
         }
       },
-      "id": "c4cbfa23-59eb-4917-9cae-04a76e4c26b4",
+      "id": "a49fdbf6-33fa-48e9-90dd-f8956e9232cf",
       "name": "Call Ollama",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -168,7 +168,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "\n// Extract title and body from Ollama JSON response\nconst raw = (items[0].json.response || '').trim();\n\nconst lines = raw.split('\\n');\n\n// First non-blank line = title\nlet titleIdx = 0;\nwhile (titleIdx < lines.length && lines[titleIdx].trim() === '') titleIdx++;\nlet title = lines[titleIdx].trim()\n  .replace(/^(title[:\\-\\s]*)/i, '')\n  .replace(/\\*+/g, '');\n\n// Skip blank separator line\nlet bodyStart = titleIdx + 1;\nwhile (bodyStart < lines.length && lines[bodyStart].trim() === '') bodyStart++;\nlet body = lines.slice(bodyStart).join('\\n').trim();\n\n// Fallback: if title looks like body prose (> 150 chars or empty)\nif (!title || title.length > 150) {\n  const firstSentence = (body || raw).replace(/\\n/g, ' ').split(/(?<=[.!?])\\s+/)[0];\n  title = firstSentence.slice(0, 90).trim();\n  if (!body) body = raw;\n}\n\n// Strip forbidden phrases from body\nconst forbidden = [\n  /valued as not reported/gi, /builder not listed/gi,\n  /not available/gi, /unknown builder/gi,\n];\nforbidden.forEach(re => { body = body.replace(re, ''); });\n\n// Pass config fields forward for WP publish\nconst cfg = $('Config').first().json;\nreturn [{json: {\n  title,\n  body,\n  cityName:   cfg.cityName,\n  siteUrl:    cfg.siteUrl,\n  wpUser:     cfg.wpUser,\n  wpAppPass:  cfg.wpAppPass,\n  categoryId: cfg.categoryId,\n}}];\n"
       },
-      "id": "8593640b-dc1d-4384-aeec-e779eba8392b",
+      "id": "1933949d-3a69-4477-824c-e4bbea4b5c10",
       "name": "Parse Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -182,7 +182,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "\n// Query WP REST for recent posts in same category (3-day window)\nconst data = items[0].json;\nconst { siteUrl, wpUser, wpAppPass, categoryId } = data;\n\nconst cutoff = new Date();\ncutoff.setDate(cutoff.getDate() - 3);\n\nconst url = `${siteUrl}/wp-json/wp/v2/posts?categories=${categoryId}&after=${cutoff.toISOString()}&per_page=5&status=publish`;\nconst auth = 'Basic ' + Buffer.from(`${wpUser}:${wpAppPass}`).toString('base64');\n\nlet isDuplicate = false;\ntry {\n  const resp = await fetch(url, { headers: { 'Authorization': auth } });\n  const posts = await resp.json();\n  isDuplicate = Array.isArray(posts) && posts.length > 0;\n} catch (e) {\n  isDuplicate = false; // fail open\n}\n\nreturn [{json: {...data, isDuplicate}}];\n"
       },
-      "id": "85e6b6bd-6040-4ba9-9b72-8adfe4fe12ab",
+      "id": "a3144246-1388-4137-9619-92a7a8849198",
       "name": "Check Duplicate",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -201,7 +201,7 @@
           },
           "conditions": [
             {
-              "id": "b57cf907-d533-4cf3-9ddb-e5aca95ee0a6",
+              "id": "a84afd22-6e70-4b76-8e90-eee6b54aa51c",
               "leftValue": "={{ $json.isDuplicate }}",
               "rightValue": false,
               "operator": {
@@ -214,7 +214,7 @@
         },
         "options": {}
       },
-      "id": "be6fac06-35ac-4faf-a427-ee2425e64b31",
+      "id": "87b150f5-267a-428c-9b46-e54f9912698d",
       "name": "Is Duplicate?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
@@ -236,7 +236,7 @@
           "timeout": 30000
         }
       },
-      "id": "ce6936f9-9db5-4fe9-86cc-e3aaa2661048",
+      "id": "34d23ec9-0394-46bc-a09b-8dffdce377a1",
       "name": "Publish to WordPress",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -344,14 +344,14 @@
     },
     "Is Duplicate?": {
       "main": [
-        [],
         [
           {
             "node": "Publish to WordPress",
             "type": "main",
             "index": 0
           }
-        ]
+        ],
+        []
       ]
     }
   },
@@ -359,6 +359,6 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "id": "0d560123-99d7-4690-8583-810bbc5ab1bc",
+  "id": "5c83f21f-33d8-4f61-b659-c2ca8e69ea9a",
   "tags": []
 }

@@ -12,7 +12,7 @@
           ]
         }
       },
-      "id": "30a88ce2-27b5-4997-aa48-0e3d89a5d07a",
+      "id": "39b44652-0fbf-44af-b623-d4fde002f9f0",
       "name": "Schedule Trigger",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
@@ -28,49 +28,49 @@
         "assignments": {
           "assignments": [
             {
-              "id": "aaf11035-99f1-44ed-b57f-c96f7feb3285",
+              "id": "6e5bb2eb-b0ea-4485-9be5-4c337433f86c",
               "name": "cityName",
               "value": "Fate",
               "type": "string"
             },
             {
-              "id": "110c832a-1575-4ca4-add6-91730cf1d942",
+              "id": "15a5bf9e-e005-4cf3-94c4-255f21b585d0",
               "name": "publication",
               "value": "Fate Daily Post",
               "type": "string"
             },
             {
-              "id": "261a1cf6-0a63-4fbb-81d1-e123c7991d3d",
+              "id": "3c4f6188-5424-45b5-929f-818b62c96473",
               "name": "siteUrl",
               "value": "https://fatedailypost.com",
               "type": "string"
             },
             {
-              "id": "fa18e066-762c-4c6f-943a-daa1a1b13978",
+              "id": "bb62ed23-ca6a-4ab5-b75e-717ed63df50d",
               "name": "wpUser",
               "value": "admin",
               "type": "string"
             },
             {
-              "id": "dd4a3e0d-7ace-4b94-9b7c-dbc1d737714d",
+              "id": "c086e276-3d78-4406-ad79-a351db07e708",
               "name": "wpAppPass",
               "value": "REPLACE_WITH_APP_PASS_FATE",
               "type": "string"
             },
             {
-              "id": "f96fa7db-5b11-4ac5-9945-ca2646a060b3",
+              "id": "fdffd189-da53-4e65-889f-a5f4cacf3d30",
               "name": "categoryId",
               "value": 4,
               "type": "number"
             },
             {
-              "id": "785c8bdd-9bec-4fa5-bb13-d643b5f83545",
+              "id": "066a83a5-5863-4915-b1fa-bec99e17f494",
               "name": "tdlrFilter",
               "value": "FATE",
               "type": "string"
             },
             {
-              "id": "dce87454-0346-457f-b429-d5ff3e8bc180",
+              "id": "ea4f1ac7-a1cb-410b-a423-2e6be820907d",
               "name": "dataUrl",
               "value": "https://data.texas.gov/resource/7358-krk7.json?$where=business_city_state_zip+like+'FATE%25'&$limit=200&$order=license_expiration_date+DESC",
               "type": "string"
@@ -79,7 +79,7 @@
         },
         "options": {}
       },
-      "id": "ba761342-0caf-411a-a4a9-e7695b4eb916",
+      "id": "3df0aa80-1c6f-48ce-8aa1-ecba7261f215",
       "name": "Config",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
@@ -97,7 +97,7 @@
           "timeout": 30000
         }
       },
-      "id": "e52d0f22-576d-4350-8a25-69c9c3564547",
+      "id": "5fafd4bc-ba5a-464b-8185-6c67a4916a4d",
       "name": "Fetch Licenses",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -111,7 +111,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "\nconst allLicenses = items[0].json;\nif (!Array.isArray(allLicenses)) {\n  return [{json: {hasData: false}}];\n}\n\nconst cfg = $('Config').first().json;\nconst filter = (cfg.tdlrFilter || '').toUpperCase();\n\nconst active = allLicenses.filter(lic => {\n  const city   = (lic.business_city_state_zip || lic.city || '').toUpperCase();\n  const status = (lic.license_status || lic.status || '').toUpperCase();\n  return city.includes(filter) && (!status || status === 'ACTIVE' || status === 'ISSUED');\n});\n\nif (active.length === 0) {\n  return [{json: {hasData: false, cityName: cfg.cityName}}];\n}\n\nconst byTrade = {};\nactive.forEach(lic => {\n  const trade = (lic.license_type || lic.trade_type || lic.program || 'General').trim();\n  if (!byTrade[trade]) byTrade[trade] = [];\n  byTrade[trade].push(lic);\n});\n\nreturn [{json: {\n  hasData:    true,\n  byTrade,\n  count:      active.length,\n  cityName:   cfg.cityName,\n  siteUrl:    cfg.siteUrl,\n  wpUser:     cfg.wpUser,\n  wpAppPass:  cfg.wpAppPass,\n  categoryId: cfg.categoryId,\n}}];\n"
       },
-      "id": "fc01794b-3912-4d99-a7f4-6b1af95b7d3b",
+      "id": "c6eb09ce-e745-4a47-a0cc-ac8e24b2ec63",
       "name": "Process Licenses",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -130,7 +130,7 @@
           },
           "conditions": [
             {
-              "id": "cb579957-da4a-4fd2-8ea3-eb66451ac330",
+              "id": "d066ffc8-a17a-4f07-8164-2af5f6ec3484",
               "leftValue": "={{ $json.hasData }}",
               "rightValue": true,
               "operator": {
@@ -143,7 +143,7 @@
         },
         "options": {}
       },
-      "id": "7bb009a2-5c0e-4ef6-b5c8-407488086fe2",
+      "id": "9d6dc274-7765-4eed-bf61-b3a6ff446cee",
       "name": "Has Licenses?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
@@ -157,7 +157,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "\nconst data = items[0].json;\nconst { byTrade, count, cityName } = data;\n\nlet tradeSummary = '';\nfor (const [trade, lics] of Object.entries(byTrade)) {\n  tradeSummary += `${trade}: ${lics.length} active license(s)\\n`;\n}\n\nconst prompt = `You are a civic journalist writing for Fate Daily Post, a community newspaper covering Fate, Texas.\n\nWrite a news article summarizing recently active business licenses in Fate from the Texas Department of Licensing and Regulation (TDLR).\n\nABSOLUTE RULES:\n- Prose paragraphs ONLY. No bullets, dashes, numbered lists, or asterisks.\n- Group licenses by trade type into flowing paragraphs.\n- Every business name and trade type must appear inside a complete sentence.\n- Do not write \"not listed\" or \"unknown\" \u2014 omit any item without usable information.\n- Factual, local newspaper tone. 200\u2013300 words.\n- Output: article title on line 1 (no prefix), blank line, then article body.\n\nEXAMPLE OUTPUT:\nNew Businesses Register Across Skilled Trades in Fate\n\nA new batch of state-issued business licenses recorded this month through the Texas Department of Licensing and Regulation shows continued commercial activity in Fate. The registrations span several skilled trade categories, reflecting the growing demand for services in one of the region's fastest-expanding communities.\n\nThe cosmetology sector led the filings with four new active licenses, including salons and individual stylists establishing practices within the city. Electrical contractors accounted for three registrations, with licensed firms now authorized to serve both new residential construction and commercial retrofit projects.\n\nTwo HVAC businesses joined the local registry, as demand for climate-control installation continues to rise alongside the residential building boom in the county.\n\nLICENSE DATA:\n${tradeSummary}\nTotal active licenses: ${count}\nCity: Fate\nSource: TDLR \u2014 Texas Open Data Portal\n\nNow write the article:`;\n\nconst rawBody = JSON.stringify({\n  model: 'qwen2.5:3b',\n  prompt,\n  temperature: 0.3,\n  num_predict: 1200,\n  stream: false,\n});\n\nreturn [{json: {\n  rawBody,\n  cityName:   data.cityName,\n  siteUrl:    data.siteUrl,\n  wpUser:     data.wpUser,\n  wpAppPass:  data.wpAppPass,\n  categoryId: data.categoryId,\n}}];\n"
       },
-      "id": "51f4aa78-632f-4e25-995c-b9f0f05f2201",
+      "id": "7ec6a881-998a-416a-ac97-908d6ac40d4c",
       "name": "Build Prompt",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -178,7 +178,7 @@
           "timeout": 120000
         }
       },
-      "id": "58d1311e-5527-4a8e-8af7-ddadfcc17488",
+      "id": "779f1ca7-e2ab-411b-b10a-5a671c7546b6",
       "name": "Call Ollama",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -192,7 +192,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "\n// Extract title and body from Ollama JSON response\nconst raw = (items[0].json.response || '').trim();\n\nconst lines = raw.split('\\n');\n\n// First non-blank line = title\nlet titleIdx = 0;\nwhile (titleIdx < lines.length && lines[titleIdx].trim() === '') titleIdx++;\nlet title = lines[titleIdx].trim()\n  .replace(/^(title[:\\-\\s]*)/i, '')\n  .replace(/\\*+/g, '');\n\n// Skip blank separator line\nlet bodyStart = titleIdx + 1;\nwhile (bodyStart < lines.length && lines[bodyStart].trim() === '') bodyStart++;\nlet body = lines.slice(bodyStart).join('\\n').trim();\n\n// Fallback: if title looks like body prose (> 150 chars or empty)\nif (!title || title.length > 150) {\n  const firstSentence = (body || raw).replace(/\\n/g, ' ').split(/(?<=[.!?])\\s+/)[0];\n  title = firstSentence.slice(0, 90).trim();\n  if (!body) body = raw;\n}\n\n// Strip forbidden phrases from body\nconst forbidden = [\n  /valued as not reported/gi, /builder not listed/gi,\n  /not available/gi, /unknown builder/gi,\n];\nforbidden.forEach(re => { body = body.replace(re, ''); });\n\n// Pass config fields forward for WP publish\nconst cfg = $('Config').first().json;\nreturn [{json: {\n  title,\n  body,\n  cityName:   cfg.cityName,\n  siteUrl:    cfg.siteUrl,\n  wpUser:     cfg.wpUser,\n  wpAppPass:  cfg.wpAppPass,\n  categoryId: cfg.categoryId,\n}}];\n"
       },
-      "id": "79fb3fb6-ce01-4ad6-9fe5-2133f84f72b0",
+      "id": "e9184aae-df86-4767-8e5e-6b2a6f33e23e",
       "name": "Parse Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -206,7 +206,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "\n// Query WP REST for recent posts in same category (25-day window)\nconst data = items[0].json;\nconst { siteUrl, wpUser, wpAppPass, categoryId } = data;\n\nconst cutoff = new Date();\ncutoff.setDate(cutoff.getDate() - 25);\n\nconst url = `${siteUrl}/wp-json/wp/v2/posts?categories=${categoryId}&after=${cutoff.toISOString()}&per_page=5&status=publish`;\nconst auth = 'Basic ' + Buffer.from(`${wpUser}:${wpAppPass}`).toString('base64');\n\nlet isDuplicate = false;\ntry {\n  const resp = await fetch(url, { headers: { 'Authorization': auth } });\n  const posts = await resp.json();\n  isDuplicate = Array.isArray(posts) && posts.length > 0;\n} catch (e) {\n  isDuplicate = false; // fail open\n}\n\nreturn [{json: {...data, isDuplicate}}];\n"
       },
-      "id": "36addab1-8a61-478d-a277-2f4e77a8b42a",
+      "id": "107b23d6-1af5-4fc4-92cd-6be3624954b1",
       "name": "Check Duplicate",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -225,7 +225,7 @@
           },
           "conditions": [
             {
-              "id": "34f64f9b-f408-4bfd-8ee1-1d3bd71b5a28",
+              "id": "dda8654b-dcd7-4bdd-b7cd-d20d14db0d8a",
               "leftValue": "={{ $json.isDuplicate }}",
               "rightValue": false,
               "operator": {
@@ -238,7 +238,7 @@
         },
         "options": {}
       },
-      "id": "d974db66-e301-4e51-8132-03a986ae9c37",
+      "id": "10466514-ffc2-4571-8ac1-78b9311eb170",
       "name": "Is Duplicate?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
@@ -260,7 +260,7 @@
           "timeout": 30000
         }
       },
-      "id": "5dd0e1d2-b348-4fdd-96e8-3026ed2f0aff",
+      "id": "f1e645c8-1002-413c-9008-b4f4880c16c0",
       "name": "Publish to WordPress",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -379,14 +379,14 @@
     },
     "Is Duplicate?": {
       "main": [
-        [],
         [
           {
             "node": "Publish to WordPress",
             "type": "main",
             "index": 0
           }
-        ]
+        ],
+        []
       ]
     }
   },
@@ -394,6 +394,6 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "id": "f9ddd3c6-7ab7-4eb1-b218-9c4638e6688e",
+  "id": "412af6b3-844d-4ca2-9e14-d35e563bd383",
   "tags": []
 }

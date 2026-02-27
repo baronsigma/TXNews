@@ -12,7 +12,7 @@
           ]
         }
       },
-      "id": "c795c70d-468d-47ba-8416-8179a43afe66",
+      "id": "d227c133-941d-420f-9ffc-a1b81fb98a17",
       "name": "Schedule Trigger",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
@@ -28,49 +28,49 @@
         "assignments": {
           "assignments": [
             {
-              "id": "4dc2dac6-c05e-4ead-9fff-9a1ccd3574c1",
+              "id": "70ffd5a7-a2df-46d7-b481-6db0e2671b9b",
               "name": "cityName",
               "value": "Anna",
               "type": "string"
             },
             {
-              "id": "8f12f687-eb7d-4469-ab99-e953c5b23517",
+              "id": "3d8f39b5-a474-4fbb-a819-2876bd77b489",
               "name": "publication",
               "value": "Anna Record",
               "type": "string"
             },
             {
-              "id": "0ffc7fd2-126a-4d7f-89a9-1707201dbb99",
+              "id": "d9bc1173-b1c6-47e7-a8b8-25a546580ccd",
               "name": "siteUrl",
               "value": "https://theannanews.com",
               "type": "string"
             },
             {
-              "id": "c7dade57-104d-4b07-9680-0bb6fa020ed3",
+              "id": "be175cff-a451-49d1-942a-1d31b2cc902e",
               "name": "wpUser",
               "value": "admin",
               "type": "string"
             },
             {
-              "id": "00f760fb-1de2-49d8-8042-9620a6399a30",
+              "id": "e3c2718c-5411-46c3-abb3-9e72579f0c3e",
               "name": "wpAppPass",
               "value": "REPLACE_WITH_APP_PASS_ANNA",
               "type": "string"
             },
             {
-              "id": "815e6a69-6d04-4a8d-9f6f-c0470ca22041",
+              "id": "36c364b7-5eac-4363-bc9e-31e1dbb48a49",
               "name": "categoryId",
               "value": 2,
               "type": "number"
             },
             {
-              "id": "126542e4-35d0-4037-bf7f-b317e8a16524",
+              "id": "aa91485d-e05c-40c2-baf7-3e06d82645ce",
               "name": "cadCityFilter",
               "value": "ANNA",
               "type": "string"
             },
             {
-              "id": "1110f4ee-715f-4823-a753-53279e45defd",
+              "id": "a2b1b88a-7e1f-421c-9853-a882e3b3f8aa",
               "name": "dataUrl",
               "value": "https://data.texas.gov/resource/82ee-gbj5.json?$where=situscity+like+'ANNA%25'&$limit=500&$order=permitissueddate+DESC",
               "type": "string"
@@ -79,7 +79,7 @@
         },
         "options": {}
       },
-      "id": "1041a9fe-0b24-449e-8b25-cfe2731f6240",
+      "id": "f083eb59-e10d-4b60-9788-3a6e6d452481",
       "name": "Config",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
@@ -97,7 +97,7 @@
           "timeout": 30000
         }
       },
-      "id": "b27e7bd5-b82f-4b0e-97c1-204ac6569c68",
+      "id": "d7737cac-5225-495e-bd0f-9079619a4321",
       "name": "Fetch Permits",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -111,7 +111,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "\n// Filter Collin CAD permits for our city, within 60-day window\nconst allPermits = items[0].json;\nif (!Array.isArray(allPermits)) {\n  return [{json: {hasData: false}}];\n}\n\nconst cfg = $('Config').first().json;\nconst cadFilter = (cfg.cadCityFilter || '').toUpperCase();\n\nconst cutoff = new Date();\ncutoff.setDate(cutoff.getDate() - 60);\nconst cutoffStr = cutoff.toISOString().split('T')[0];\n\nconst filtered = allPermits.filter(p => {\n  const city  = (p.situscity || '').toUpperCase().trim();\n  const issued = (p.permitissueddate || '').substring(0, 10);\n  return city.includes(cadFilter) && issued >= cutoffStr;\n});\n\nif (filtered.length === 0) {\n  return [{json: {\n    hasData: false,\n    cityName:   cfg.cityName,\n    siteUrl:    cfg.siteUrl,\n    wpUser:     cfg.wpUser,\n    wpAppPass:  cfg.wpAppPass,\n    categoryId: cfg.categoryId,\n  }}];\n}\n\n// Group by subdivision\nconst bySubdivision = {};\nfiltered.forEach(p => {\n  const sub = (p.situssubdivision || p.legalsubdivision || 'General Area').trim() || 'General Area';\n  if (!bySubdivision[sub]) bySubdivision[sub] = [];\n  bySubdivision[sub].push(p);\n});\n\nreturn [{json: {\n  hasData:       true,\n  permits:       filtered,\n  bySubdivision,\n  count:         filtered.length,\n  cityName:      cfg.cityName,\n  siteUrl:       cfg.siteUrl,\n  wpUser:        cfg.wpUser,\n  wpAppPass:     cfg.wpAppPass,\n  categoryId:    cfg.categoryId,\n}}];\n"
       },
-      "id": "0cd01e70-f407-4560-8ea5-e08560f8cabc",
+      "id": "3cd9e61e-bbcf-4f04-b507-b39c33d89dfd",
       "name": "Process Permits",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -130,7 +130,7 @@
           },
           "conditions": [
             {
-              "id": "84e1efc1-5f6e-427a-9713-193a1db8b2d6",
+              "id": "705f9699-d337-4b0f-84ec-c00ebd1c494a",
               "leftValue": "={{ $json.hasData }}",
               "rightValue": true,
               "operator": {
@@ -143,7 +143,7 @@
         },
         "options": {}
       },
-      "id": "fff3fdb5-a48a-4af7-82df-97b2e6990568",
+      "id": "6ec33077-6db5-4585-99e1-e2396a4c0f49",
       "name": "Has Permits?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
@@ -157,7 +157,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "\n// Build Qwen prompt for building permit digest\nconst data = items[0].json;\nconst { bySubdivision, count, cityName } = data;\n\nlet permitSummary = '';\nfor (const [sub, permits] of Object.entries(bySubdivision)) {\n  const builders = {};\n  permits.forEach(p => {\n    const b = (p.contractorname || p.contractor || '').trim();\n    if (b && !['NOT LISTED','N/A','NONE','UNKNOWN',''].includes(b.toUpperCase())) {\n      builders[b] = (builders[b] || 0) + 1;\n    }\n  });\n  const builderStr = Object.entries(builders)\n    .map(([b, c]) => `${b} (${c} permit${c > 1 ? 's' : ''})`).join(', ');\n  permitSummary += `Subdivision: ${sub} \u2014 ${permits.length} permit(s). ${builderStr ? 'Builders: ' + builderStr : ''}\\n`;\n}\n\nconst prompt = `You are a civic journalist writing for Anna Record, a community newspaper covering Anna, Texas.\n\nWrite a news article about recent residential building permit activity using the data below. Follow the EXAMPLE exactly.\n\nABSOLUTE RULES (violation = failure):\n- Prose paragraphs ONLY. No bullets, dashes, numbered lists, or asterisks under any circumstances.\n- Every subdivision name and builder name must appear inside a grammatically complete sentence.\n- Group permits by subdivision into flowing paragraphs \u2014 one paragraph per subdivision or logical grouping.\n- If builder information is missing, omit the builder \u2014 never write \"not listed\", \"unknown\", \"not available\", or \"N/A\".\n- Forbidden phrases: \"valued as not reported\", \"builder not listed\", \"not available\", \"unknown builder\".\n- Article length: 250\u2013350 words. Factual local newspaper tone.\n- Output exactly: article title on line 1 (no \"Title:\" prefix), blank line, then article body.\n\nEXAMPLE OUTPUT:\nFourteen New Homes Break Ground Across Anna Subdivisions\n\nResidential construction activity picked up across Anna last month as developers broke ground on fourteen new single-family homes spanning three established subdivisions. The permits, issued through the county, reflect continued interest from buyers in one of the region's fastest-growing communities.\n\nThe largest concentration of new starts was in Light Farms, where D.R. Horton secured permits for six homes along the neighborhood's northern edge. Neighboring Lilyana recorded four new permits, with Toll Brothers accounting for three of those starts, continuing the builder's prominent presence in the enclave.\n\nThree additional permits were issued for homes in Mustang Lakes, a gated community near the city's western corridor. Village Homes was the builder of record on two of those projects.\n\nCity officials note that Anna's residential pipeline remains robust heading into spring, with multiple new subdivision plats pending approval before the planning and zoning commission.\n\nPERMIT DATA:\n${permitSummary}\nTotal permits (last 60 days): ${count}\nCity: Anna\n\nNow write the article:`;\n\nconst rawBody = JSON.stringify({\n  model: 'qwen2.5:3b',\n  prompt,\n  temperature: 0.3,\n  num_predict: 1500,\n  stream: false,\n});\n\nreturn [{json: {\n  rawBody,\n  cityName:   data.cityName,\n  siteUrl:    data.siteUrl,\n  wpUser:     data.wpUser,\n  wpAppPass:  data.wpAppPass,\n  categoryId: data.categoryId,\n}}];\n"
       },
-      "id": "7d5f68c5-3711-4435-99b3-6ce4d14ca9b0",
+      "id": "9636424a-10ce-4644-8e77-210b27344c34",
       "name": "Build Prompt",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -178,7 +178,7 @@
           "timeout": 120000
         }
       },
-      "id": "4aca055e-aea8-4c3d-960c-cee4ee8bd34e",
+      "id": "37a63a06-d27d-4e50-882d-4d8469c5d218",
       "name": "Call Ollama",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -192,7 +192,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "\n// Extract title and body from Ollama JSON response\nconst raw = (items[0].json.response || '').trim();\n\nconst lines = raw.split('\\n');\n\n// First non-blank line = title\nlet titleIdx = 0;\nwhile (titleIdx < lines.length && lines[titleIdx].trim() === '') titleIdx++;\nlet title = lines[titleIdx].trim()\n  .replace(/^(title[:\\-\\s]*)/i, '')\n  .replace(/\\*+/g, '');\n\n// Skip blank separator line\nlet bodyStart = titleIdx + 1;\nwhile (bodyStart < lines.length && lines[bodyStart].trim() === '') bodyStart++;\nlet body = lines.slice(bodyStart).join('\\n').trim();\n\n// Fallback: if title looks like body prose (> 150 chars or empty)\nif (!title || title.length > 150) {\n  const firstSentence = (body || raw).replace(/\\n/g, ' ').split(/(?<=[.!?])\\s+/)[0];\n  title = firstSentence.slice(0, 90).trim();\n  if (!body) body = raw;\n}\n\n// Strip forbidden phrases from body\nconst forbidden = [\n  /valued as not reported/gi, /builder not listed/gi,\n  /not available/gi, /unknown builder/gi,\n];\nforbidden.forEach(re => { body = body.replace(re, ''); });\n\n// Pass config fields forward for WP publish\nconst cfg = $('Config').first().json;\nreturn [{json: {\n  title,\n  body,\n  cityName:   cfg.cityName,\n  siteUrl:    cfg.siteUrl,\n  wpUser:     cfg.wpUser,\n  wpAppPass:  cfg.wpAppPass,\n  categoryId: cfg.categoryId,\n}}];\n"
       },
-      "id": "a8544fa1-4c66-4638-9487-300bacf6caa8",
+      "id": "cf7e242b-d434-429d-9e55-cbea3d7bfd9a",
       "name": "Parse Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -206,7 +206,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "\n// Query WP REST for recent posts in same category (2-day window)\nconst data = items[0].json;\nconst { siteUrl, wpUser, wpAppPass, categoryId } = data;\n\nconst cutoff = new Date();\ncutoff.setDate(cutoff.getDate() - 2);\n\nconst url = `${siteUrl}/wp-json/wp/v2/posts?categories=${categoryId}&after=${cutoff.toISOString()}&per_page=5&status=publish`;\nconst auth = 'Basic ' + Buffer.from(`${wpUser}:${wpAppPass}`).toString('base64');\n\nlet isDuplicate = false;\ntry {\n  const resp = await fetch(url, { headers: { 'Authorization': auth } });\n  const posts = await resp.json();\n  isDuplicate = Array.isArray(posts) && posts.length > 0;\n} catch (e) {\n  isDuplicate = false; // fail open\n}\n\nreturn [{json: {...data, isDuplicate}}];\n"
       },
-      "id": "85361fe9-4038-4183-95de-5a1d41bec549",
+      "id": "c9970840-5dad-45cb-880c-9cf5af41cb53",
       "name": "Check Duplicate",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -225,7 +225,7 @@
           },
           "conditions": [
             {
-              "id": "6b732e1c-a4a6-43e5-ab12-f62e325d09fd",
+              "id": "0df68852-30e4-4bcd-a89d-b23efa6c7de1",
               "leftValue": "={{ $json.isDuplicate }}",
               "rightValue": false,
               "operator": {
@@ -238,7 +238,7 @@
         },
         "options": {}
       },
-      "id": "07cc5a17-32fe-495e-8d01-8a2758e9a8c0",
+      "id": "df679b4e-3448-44b6-bd5f-e74843ff05ea",
       "name": "Is Duplicate?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
@@ -260,7 +260,7 @@
           "timeout": 30000
         }
       },
-      "id": "4eca9710-617b-4fd6-b1f8-d01daccef425",
+      "id": "4ee70eb3-7887-4df2-9f8a-f495e5eb2ca5",
       "name": "Publish to WordPress",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -379,14 +379,14 @@
     },
     "Is Duplicate?": {
       "main": [
-        [],
         [
           {
             "node": "Publish to WordPress",
             "type": "main",
             "index": 0
           }
-        ]
+        ],
+        []
       ]
     }
   },
@@ -394,6 +394,6 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "id": "5806fed8-d6b3-4821-a8d8-85cc6ca5dbd2",
+  "id": "ba2f0db2-6c9c-4dfa-9e50-6f1248a6cf24",
   "tags": []
 }

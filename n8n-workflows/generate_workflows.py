@@ -448,7 +448,7 @@ def build_permit_workflow(city: dict) -> dict:
         "Call Ollama":      {"main": [[{"node": "Parse Response",  "type": "main", "index": 0}]]},
         "Parse Response":   {"main": [[{"node": "Check Duplicate", "type": "main", "index": 0}]]},
         "Check Duplicate":  {"main": [[{"node": "Is Duplicate?",   "type": "main", "index": 0}]]},
-        "Is Duplicate?":    {"main": [[], [{"node": "Publish to WordPress", "type": "main", "index": 0}]]},
+        "Is Duplicate?":    {"main": [[{"node": "Publish to WordPress", "type": "main", "index": 0}], []]},
     }
 
     return make_workflow("Permit Digest — " + city["name"], nodes, connections)
@@ -598,7 +598,7 @@ def build_license_workflow(city: dict) -> dict:
         "Call Ollama":      {"main": [[{"node": "Parse Response",   "type": "main", "index": 0}]]},
         "Parse Response":   {"main": [[{"node": "Check Duplicate",  "type": "main", "index": 0}]]},
         "Check Duplicate":  {"main": [[{"node": "Is Duplicate?",    "type": "main", "index": 0}]]},
-        "Is Duplicate?":    {"main": [[], [{"node": "Publish to WordPress", "type": "main", "index": 0}]]},
+        "Is Duplicate?":    {"main": [[{"node": "Publish to WordPress", "type": "main", "index": 0}], []]},
     }
 
     return make_workflow("Business License Digest — " + city["name"], nodes, connections)
@@ -677,7 +677,7 @@ Date: ${meetingDate}
 Type: ${meetingType}
 
 AGENDA TEXT (from official PDF):
-${agendaText.slice(0, 6000)}
+${(agendaText || '').slice(0, 6000)}
 
 Now write the article:`;
 
@@ -738,7 +738,7 @@ def build_agenda_workflow(city: dict) -> dict:
         "Call Ollama":      {"main": [[{"node": "Parse Response",   "type": "main", "index": 0}]]},
         "Parse Response":   {"main": [[{"node": "Check Duplicate",  "type": "main", "index": 0}]]},
         "Check Duplicate":  {"main": [[{"node": "Is Duplicate?",    "type": "main", "index": 0}]]},
-        "Is Duplicate?":    {"main": [[], [{"node": "Publish to WordPress", "type": "main", "index": 0}]]},
+        "Is Duplicate?":    {"main": [[{"node": "Publish to WordPress", "type": "main", "index": 0}], []]},
     }
 
     return make_workflow("Agenda Digest — " + city["name"], nodes, connections)
